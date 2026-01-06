@@ -114,7 +114,7 @@ export function TopSales({ products }: TopSalesProps) {
                   {featuredProduct.name}
                 </h3>
                 <p className="text-base md:text-2xl font-bold text-foreground mt-2 md:mt-3">
-                  {getPrice(featuredProduct).toFixed(2)} €
+                  ${getPrice(featuredProduct).toFixed(2)}
                 </p>
               </div>
             </div>
@@ -152,11 +152,11 @@ export function TopSales({ products }: TopSalesProps) {
                   </h3>
                   <div className="flex items-center gap-1 md:gap-2 mt-1.5 md:mt-2">
                     <span className="text-sm md:text-base font-bold text-foreground">
-                      {getPrice(product).toFixed(2)} €
+                      ${getPrice(product).toFixed(2)}
                     </span>
                     {getComparePrice(product) !== null && getComparePrice(product)! > getPrice(product) && (
                       <span className="text-[10px] md:text-xs text-muted-foreground line-through">
-                        {getComparePrice(product)!.toFixed(2)} €
+                        ${getComparePrice(product)!.toFixed(2)}
                       </span>
                     )}
                   </div>

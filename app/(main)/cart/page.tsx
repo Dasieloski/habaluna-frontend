@@ -87,7 +87,7 @@ export default function CartPage() {
               {isFreeShipping ? (
                 <span className="text-green-600 font-medium">¡El envío es gratis!</span>
               ) : (
-                <>Desde {shippingThreshold.toFixed(2).replace(".", ",")} € gastos, el envío es gratis!</>
+                <>Desde ${shippingThreshold.toFixed(2)} de compras, el envío es gratis!</>
               )}
             </p>
             <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -128,7 +128,7 @@ export default function CartPage() {
                     <h3 className="font-semibold text-gray-900 text-sm md:text-base mb-1 truncate">{item.product.name}</h3>
                     <p className="text-xs md:text-sm text-gray-500 mb-2">Opción: {option}</p>
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="font-bold text-sky-600">{price.toFixed(2).replace(".", ",")} €</span>
+                      <span className="font-bold text-sky-600">${price.toFixed(2)}</span>
                     </div>
 
                     {/* Acciones móvil y desktop */}
@@ -192,7 +192,7 @@ export default function CartPage() {
                     </div>
                     <h4 className="text-xs md:text-sm text-gray-700 mb-1 line-clamp-2">{product.name}</h4>
                     <p className="text-sm font-bold text-gray-900 mb-2">
-                      {product.price.toFixed(2).replace(".", ",")} €
+                      ${product.price.toFixed(2)}
                     </p>
                     <button className="w-full bg-sky-500 hover:bg-sky-600 text-white text-xs py-2 px-3 rounded-full transition-colors">
                       Añadir al carrito
@@ -211,18 +211,18 @@ export default function CartPage() {
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between text-sm md:text-base">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">{subtotal.toFixed(2).replace(".", ",")} €</span>
+                  <span className="font-medium">${subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm md:text-base">
                   <span className="text-gray-600">Envío</span>
-                  <span className="font-medium">{shipping.toFixed(2).replace(".", ",")} €</span>
+                  <span className="font-medium">${shipping.toFixed(2)}</span>
                 </div>
               </div>
 
               <div className="border-t border-gray-200 pt-4 mb-4">
                 <div className="flex justify-between text-base md:text-lg font-bold">
                   <span>Total. IVA incluido.</span>
-                  <span>{total.toFixed(2).replace(".", ",")} €</span>
+                  <span>${total.toFixed(2)}</span>
                 </div>
               </div>
 

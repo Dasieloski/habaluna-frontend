@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch"
 import { ArrowLeft, X, Save, ImagePlus, Loader2 } from "lucide-react"
 import { api, type BackendCategory } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
+import { slugify } from "@/lib/slug"
 
 export default function NewProductPage() {
   const router = useRouter()
@@ -26,6 +27,7 @@ export default function NewProductPage() {
   const [imageFiles, setImageFiles] = useState<File[]>([]) // Archivos de imagen
   const [isOnSale, setIsOnSale] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [autoSlug, setAutoSlug] = useState(true)
   
   // Refs para los campos del formulario
   const nameRef = useRef<HTMLInputElement>(null)
@@ -36,7 +38,8 @@ export default function NewProductPage() {
   const comparePriceRef = useRef<HTMLInputElement>(null)
   const stockRef = useRef<HTMLInputElement>(null)
   const categoryIdRef = useRef<string>("")
-  const statusRef = useRef<"active" | "draft" | "archived">("draft")
+  // Por defecto, los productos nuevos deben quedar activos
+  const statusRef = useRef<"active" | "draft" | "archived">("active")
   const [isFeatured, setIsFeatured] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -167,14 +170,11 @@ export default function NewProductPage() {
 
   // Generar slug automáticamente desde el nombre
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (nameRef.current && slugRef.current && !slugRef.current.value) {
-      const slug = e.target.value
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "")
-      slugRef.current.value = slug
+    if (!nameRef.current || !slugRef.current) return
+    if (autoSlug) {
+      slugRef.current.value = slugify(e.target.value)
+    } else if (!slugRef.current.value) {
+      slugRef.current.value = slugify(e.target.value)
     }
   }
 
@@ -224,13 +224,36 @@ export default function NewProductPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="slug">URL amigable (slug)</Label>
+                  <div className="flex items-center justify-between rounded-lg border p-3 mb-2">
+                    <div>
+                      <p className="text-sm font-medium">Generar automáticamente</p>
+                      <p className="text-xs text-muted-foreground">
+                        Si está activo, se genera desde el nombre.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={autoSlug}
+                      onCheckedChange={(v) => {
+                        setAutoSlug(v)
+                        if (v && nameRef.current && slugRef.current) {
+                          slugRef.current.value = slugify(nameRef.current.value || "")
+                        }
+                      }}
+                    />
+                  </div>
                   <Input
                     id="slug"
                     ref={slugRef}
                     placeholder="aceite-oliva-virgen-extra"
                     className="bg-secondary/50 border-transparent focus:border-primary"
                     required
+                    disabled={autoSlug}
                   />
+                  {autoSlug && (
+                    <p className="text-xs text-muted-foreground">
+                      Slug: <span className="font-medium">{slugRef.current?.value || ""}</span>
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="shortDescription">Descripción corta (opcional)</Label>
@@ -305,7 +328,7 @@ export default function NewProductPage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="price">Precio (€)</Label>
+                  <Label htmlFor="price">Precio (USD)</Label>
                     <Input
                       id="price"
                       ref={priceRef}
@@ -338,7 +361,7 @@ export default function NewProductPage() {
                 </div>
                 {isOnSale && (
                   <div className="space-y-2 animate-fade-in">
-                    <Label htmlFor="comparePrice">Precio original (€)</Label>
+                    <Label htmlFor="comparePrice">Precio original (USD)</Label>
                     <Input
                       id="comparePrice"
                       ref={comparePriceRef}
@@ -362,7 +385,7 @@ export default function NewProductPage() {
               </CardHeader>
               <CardContent>
                 <Select
-                  defaultValue="draft"
+                  defaultValue="active"
                   onValueChange={(value: "active" | "draft" | "archived") => {
                     statusRef.current = value
                   }}

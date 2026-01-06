@@ -149,10 +149,10 @@ export function ProductCard({ product, badge, badgeColor = "coral" }: ProductCar
             {product.name}
           </h3>
           <div className="mt-2 md:mt-3 flex items-center gap-1.5 md:gap-2">
-            <span className="text-sm md:text-lg font-bold text-foreground">{price.toFixed(2)} €</span>
+            <span className="text-sm md:text-lg font-bold text-foreground">${price.toFixed(2)}</span>
             {hasDiscount && (
               <span className="text-[10px] md:text-sm text-muted-foreground line-through">
-                {comparePrice!.toFixed(2)} €
+                ${comparePrice!.toFixed(2)}
               </span>
             )}
           </div>

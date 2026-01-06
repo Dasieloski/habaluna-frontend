@@ -5,6 +5,9 @@ import { CategoryGrid } from "@/components/sections/category-grid"
 import { TopSales } from "@/components/sections/top-sales"
 import { BenefitsBar } from "@/components/sections/benefits-bar"
 
+// Evita que Vercel intente prerenderizar esta página en build (puede colgarse si el backend tarda/no responde).
+export const dynamic = "force-dynamic"
+
 async function getBanners() {
   try {
     const banners = await api.getBanners()
@@ -65,9 +68,7 @@ async function getCategories() {
 }
 
 export default async function Home() {
-  const banners = await getBanners()
-  const productsData = await getAllProducts()
-  const categories = await getCategories()
+  const [banners, productsData, categories] = await Promise.all([getBanners(), getAllProducts(), getCategories()])
 
   const products = productsData.data || []
 

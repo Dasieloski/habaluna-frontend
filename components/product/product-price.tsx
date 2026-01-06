@@ -16,9 +16,9 @@ export function ProductPrice({ priceUSD, comparePriceUSD, variant = "default" }:
   if (variant === "large") {
     return (
       <div className="flex items-baseline gap-3">
-        <span className="text-2xl font-bold text-foreground">{price.toFixed(2)} €</span>
+        <span className="text-2xl font-bold text-foreground">${price.toFixed(2)}</span>
         {hasDiscount && (
-          <span className="text-lg text-muted-foreground line-through">{compare!.toFixed(2)} €</span>
+          <span className="text-lg text-muted-foreground line-through">${compare!.toFixed(2)}</span>
         )}
       </div>
     )
@@ -26,9 +26,9 @@ export function ProductPrice({ priceUSD, comparePriceUSD, variant = "default" }:
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-base font-bold text-foreground">{price.toFixed(2)} €</span>
+      <span className="text-base font-bold text-foreground">${price.toFixed(2)}</span>
       {hasDiscount && (
-        <span className="text-sm text-muted-foreground line-through">{compare!.toFixed(2)} €</span>
+        <span className="text-sm text-muted-foreground line-through">${compare!.toFixed(2)}</span>
       )}
     </div>
   )

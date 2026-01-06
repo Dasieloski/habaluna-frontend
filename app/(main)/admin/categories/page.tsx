@@ -26,7 +26,9 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
 import { Plus, Search, Pencil, Trash2, FolderTree, Package, Image as ImageIcon } from "lucide-react"
+import { slugify } from "@/lib/slug"
 
 type CategoryRow = BackendAdminCategory & { productCount: number }
 
@@ -35,14 +37,6 @@ const getApiBaseUrl = () => {
   return raw.replace(/\/api\/?$/, "")
 }
 
-function slugify(input: string) {
-  return input
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-}
 
 function CategoriesContent() {
   const [categories, setCategories] = useState<CategoryRow[]>([])
@@ -75,6 +69,7 @@ function CategoriesContent() {
   const [removeSelectedProductIds, setRemoveSelectedProductIds] = useState<string[]>([])
   const [isSearchingRemove, setIsSearchingRemove] = useState(false)
   const [isRemoving, setIsRemoving] = useState(false)
+  const [autoSlug, setAutoSlug] = useState(true)
 
   const filteredCategories = useMemo(
     () => categories.filter((cat) => cat.name.toLowerCase().includes(searchQuery.toLowerCase())),
@@ -132,6 +127,7 @@ function CategoriesContent() {
 
   const handleEdit = (category: CategoryRow) => {
     setEditingCategory(category)
+    setAutoSlug(false) // En edición, por defecto manual para no cambiar slugs existentes
     setNewCategory({
       name: category.name ?? "",
       slug: category.slug ?? slugify(category.name ?? ""),
@@ -172,6 +168,7 @@ function CategoriesContent() {
 
   const openNewDialog = () => {
     setEditingCategory(null)
+    setAutoSlug(true)
     setNewCategory({ name: "", slug: "", description: "", image: "" })
     setError("")
     setProductSearch("")
@@ -383,26 +380,50 @@ function CategoriesContent() {
                 <Input
                   id="cat-name"
                   value={newCategory.name}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const name = e.target.value
                     setNewCategory((prev) => ({
                       ...prev,
-                      name: e.target.value,
-                      slug: prev.slug ? prev.slug : slugify(e.target.value),
+                      name,
+                      slug: autoSlug ? slugify(name) : (prev.slug || slugify(name)),
                     }))
-                  }
+                  }}
                   placeholder="Ej: Aceites"
                   className="bg-secondary/50 border-transparent focus:border-primary"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="cat-slug">Slug</Label>
+                <div className="flex items-center justify-between rounded-lg border p-3 mb-2">
+                  <div>
+                    <p className="text-sm font-medium">Generar automáticamente</p>
+                    <p className="text-xs text-muted-foreground">
+                      Si está activo, se genera desde el nombre.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={autoSlug}
+                    onCheckedChange={(v) => {
+                      setAutoSlug(v)
+                      if (v && newCategory.name) {
+                        setNewCategory((prev) => ({ ...prev, slug: slugify(prev.name) }))
+                      }
+                    }}
+                  />
+                </div>
                 <Input
                   id="cat-slug"
                   value={newCategory.slug}
                   onChange={(e) => setNewCategory({ ...newCategory, slug: e.target.value })}
                   placeholder="ej: aceites-vinagres"
                   className="bg-secondary/50 border-transparent focus:border-primary"
+                  disabled={autoSlug}
                 />
+                {autoSlug && (
+                  <p className="text-xs text-muted-foreground">
+                    Slug: <span className="font-medium">{newCategory.slug || ""}</span>
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="cat-desc">Descripción</Label>

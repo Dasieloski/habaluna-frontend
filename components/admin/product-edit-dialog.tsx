@@ -19,6 +19,7 @@ import { type Product } from "@/lib/mock-data"
 import { api, type BackendCategory, mapBackendProductToFrontend } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, ImagePlus, X } from "lucide-react"
+import { slugify } from "@/lib/slug"
 
 interface ProductEditDialogProps {
   product: Product | null
@@ -38,6 +39,7 @@ export function ProductEditDialog({ product, open, onOpenChange, onSuccess }: Pr
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [isOnSale, setIsOnSale] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [autoSlug, setAutoSlug] = useState(false) // En edición, por defecto manual
 
   // Refs para los campos del formulario
   const nameRef = useRef<HTMLInputElement>(null)
@@ -277,14 +279,9 @@ export function ProductEditDialog({ product, open, onOpenChange, onSuccess }: Pr
   }
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (nameRef.current && slugRef.current && !slugRef.current.value) {
-      const slug = e.target.value
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "")
-      slugRef.current.value = slug
+    if (!nameRef.current || !slugRef.current) return
+    if (autoSlug) {
+      slugRef.current.value = slugify(e.target.value)
     }
   }
 
@@ -327,13 +324,36 @@ export function ProductEditDialog({ product, open, onOpenChange, onSuccess }: Pr
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-slug">URL amigable (slug)</Label>
+              <div className="flex items-center justify-between rounded-lg border p-3 mb-2">
+                <div>
+                  <p className="text-sm font-medium">Generar automáticamente</p>
+                  <p className="text-xs text-muted-foreground">
+                    Si está activo, se genera desde el nombre.
+                  </p>
+                </div>
+                <Switch
+                  checked={autoSlug}
+                  onCheckedChange={(v) => {
+                    setAutoSlug(v)
+                    if (v && nameRef.current && slugRef.current) {
+                      slugRef.current.value = slugify(nameRef.current.value || "")
+                    }
+                  }}
+                />
+              </div>
               <Input
                 id="edit-slug"
                 ref={slugRef}
                 placeholder="aceite-oliva-virgen-extra"
                 className="bg-secondary/50 border-transparent focus:border-primary"
                 required
+                disabled={autoSlug}
               />
+              {autoSlug && (
+                <p className="text-xs text-muted-foreground">
+                  Slug: <span className="font-medium">{slugRef.current?.value || ""}</span>
+                </p>
+              )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">

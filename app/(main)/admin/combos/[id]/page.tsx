@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { ArrowLeft, ImagePlus, Loader2, Save, X, Search, Boxes } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { slugify } from "@/lib/slug"
 
 type SelectedItem = { productId: string; name: string; quantity: number }
 
@@ -36,6 +37,7 @@ export default function EditComboPage() {
   const [error, setError] = useState<string | null>(null)
   const [isOnSale, setIsOnSale] = useState(false)
   const [isFeatured, setIsFeatured] = useState(false)
+  const [autoSlug, setAutoSlug] = useState(false) // En edición, por defecto manual
 
   const nameRef = useRef<HTMLInputElement>(null)
   const slugRef = useRef<HTMLInputElement>(null)
@@ -263,11 +265,48 @@ export default function EditComboPage() {
                   <>
                     <div className="space-y-2">
                       <Label>Nombre del combo</Label>
-                      <Input ref={nameRef} required className="bg-secondary/50 border-transparent focus:border-primary" />
+                      <Input 
+                        ref={nameRef} 
+                        required 
+                        className="bg-secondary/50 border-transparent focus:border-primary"
+                        onChange={(e) => {
+                          if (!nameRef.current || !slugRef.current) return
+                          if (autoSlug) {
+                            slugRef.current.value = slugify(e.target.value)
+                          }
+                        }}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label>Slug</Label>
-                      <Input ref={slugRef} required className="bg-secondary/50 border-transparent focus:border-primary" />
+                      <div className="flex items-center justify-between rounded-lg border p-3 mb-2">
+                        <div>
+                          <p className="text-sm font-medium">Generar automáticamente</p>
+                          <p className="text-xs text-muted-foreground">
+                            Si está activo, se genera desde el nombre.
+                          </p>
+                        </div>
+                        <Switch
+                          checked={autoSlug}
+                          onCheckedChange={(v) => {
+                            setAutoSlug(v)
+                            if (v && nameRef.current && slugRef.current) {
+                              slugRef.current.value = slugify(nameRef.current.value || "")
+                            }
+                          }}
+                        />
+                      </div>
+                      <Input 
+                        ref={slugRef} 
+                        required 
+                        className="bg-secondary/50 border-transparent focus:border-primary"
+                        disabled={autoSlug}
+                      />
+                      {autoSlug && (
+                        <p className="text-xs text-muted-foreground">
+                          Slug: <span className="font-medium">{slugRef.current?.value || ""}</span>
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label>Descripción corta</Label>

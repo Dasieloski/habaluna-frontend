@@ -17,5 +17,7 @@ export function getImageUrl(image?: string): string | null {
   // Si la ruta empieza con /, es una ruta local de public (Next.js sirve public/ desde la raíz)
   if (image.startsWith("/")) return image
   // Si no, usa el API URL del backend
-  return `${process.env.NEXT_PUBLIC_API_URL || ""}${image}`
+  const raw = (process.env.NEXT_PUBLIC_API_URL || "").trim()
+  const base = raw && !/^https?:\/\//i.test(raw) ? `https://${raw}` : raw
+  return `${base}${image}`
 }

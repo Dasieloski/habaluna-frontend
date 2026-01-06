@@ -11,7 +11,8 @@ export const dynamic = "force-dynamic"
 async function getBanners() {
   try {
     const banners = await api.getBanners()
-    const apiBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/api\/?$/, "")
+    const raw = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").trim()
+    const apiBase = (raw && !/^https?:\/\//i.test(raw) ? `https://${raw}` : raw).replace(/\/api\/?$/, "")
     const normalize = (img: string) => {
       if (!img) return "/placeholder.svg"
       if (img.startsWith("http://") || img.startsWith("https://")) return img

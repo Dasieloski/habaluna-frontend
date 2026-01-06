@@ -1,7 +1,17 @@
-// Asegurar que API_BASE_URL no termine con /api
-let API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
-// Remover /api del final si existe (normalizar)
-API_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, '')
+function normalizeApiBaseUrl(raw: string): string {
+  let url = (raw || "").trim()
+  if (!url) return "http://localhost:4000"
+  // Si el usuario pegó solo el dominio (sin http/https), asumir https en producción.
+  if (!/^https?:\/\//i.test(url)) {
+    url = `https://${url}`
+  }
+  // Remover /api del final si existe (normalizar)
+  url = url.replace(/\/api\/?$/, "")
+  return url
+}
+
+// Asegurar que API_BASE_URL no termine con /api y que sea URL válida (con protocolo)
+let API_BASE_URL = normalizeApiBaseUrl(process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000")
 
 // Función helper para obtener el token de autenticación
 const getAuthToken = (): string | null => {

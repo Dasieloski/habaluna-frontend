@@ -332,6 +332,8 @@ export const api = {
 
       const response = await fetch(finalUrl, {
         headers,
+        // Evitar respuestas cacheadas (especialmente en Server Components / producción)
+        cache: "no-store",
       })
       if (!response.ok) {
         // Si es 401, limpiar tokens (sesión expirada) para evitar spam de requests con token inválido

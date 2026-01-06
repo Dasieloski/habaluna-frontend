@@ -47,7 +47,11 @@ const defaultBanners: Banner[] = [
 export function HeroBanner({ banners = defaultBanners }: HeroBannerProps) {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
-  const displayBanners = banners.length > 0 ? banners : defaultBanners
+  // Importante:
+  // - `banners === undefined` => el componente no recibió datos, usar defaults (modo demo)
+  // - `banners` es [] => no hay banners activos/configurados, NO usar defaults hardcodeados
+  const displayBanners =
+    banners === undefined ? defaultBanners : banners.length > 0 ? banners : []
 
   const goToSlide = useCallback(
     (index: number) => {
@@ -71,6 +75,10 @@ export function HeroBanner({ banners = defaultBanners }: HeroBannerProps) {
       return () => clearInterval(timer)
     }
   }, [displayBanners.length, nextSlide])
+
+  if (displayBanners.length === 0) {
+    return null
+  }
 
   return (
     <section className="relative overflow-hidden">

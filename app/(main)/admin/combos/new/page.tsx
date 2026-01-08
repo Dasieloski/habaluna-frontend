@@ -23,8 +23,6 @@ export default function NewComboPage() {
   const { toast } = useToast()
 
   const [isLoading, setIsLoading] = useState(false)
-  const [categories, setCategories] = useState<BackendCategory[]>([])
-  const [isLoadingCategories, setIsLoadingCategories] = useState(true)
 
   const [images, setImages] = useState<string[]>([]) // previews
   const [imageFiles, setImageFiles] = useState<File[]>([])
@@ -45,27 +43,28 @@ export default function NewComboPage() {
   const categoryIdRef = useRef<string>("")
   const statusRef = useRef<"active" | "draft" | "archived">("draft")
 
+  // Cargar categoría "Combos" automáticamente
+  useEffect(() => {
+    const loadCombosCategory = async () => {
+      try {
+        const data = await api.getCategories()
+        const combosCategory = data.find((c: BackendCategory) => c.name.toLowerCase() === "combos" || c.slug?.toLowerCase() === "combos")
+        if (combosCategory) {
+          categoryIdRef.current = combosCategory.id
+        }
+      } catch {
+        // Si no se puede cargar, se manejará en el submit
+      }
+    }
+    loadCombosCategory()
+  }, [])
+
   // Selector de productos del combo
   const [productSearch, setProductSearch] = useState("")
   const [productResults, setProductResults] = useState<Array<{ id: string; name: string }>>([])
   const [isSearching, setIsSearching] = useState(false)
   const [selected, setSelected] = useState<SelectedItem[]>([])
 
-  useEffect(() => {
-    loadCategories()
-  }, [])
-
-  const loadCategories = async () => {
-    try {
-      setIsLoadingCategories(true)
-      const data = await api.getCategories()
-      setCategories(data)
-    } catch {
-      toast({ title: "Error", description: "No se pudieron cargar las categorías", variant: "destructive" })
-    } finally {
-      setIsLoadingCategories(false)
-    }
-  }
 
   const slugify = (input: string) => {
     return input
@@ -192,9 +191,19 @@ export default function NewComboPage() {
       if (!nameRef.current?.value) throw new Error("El nombre del combo es requerido")
       if (!slugRef.current?.value) throw new Error("El slug es requerido")
       if (!descriptionRef.current?.value) throw new Error("La descripción es requerida")
-      if (!categoryIdRef.current) throw new Error("Debes seleccionar una categoría")
       if (!stockRef.current?.value) throw new Error("El stock es requerido")
       if (selected.length === 0) throw new Error("Debes seleccionar al menos 1 producto para el combo")
+
+      // Si no hay categoría asignada, buscar la categoría "Combos"
+      if (!categoryIdRef.current) {
+        const data = await api.getCategories()
+        const combosCategory = data.find((c: BackendCategory) => c.name.toLowerCase() === "combos" || c.slug?.toLowerCase() === "combos")
+        if (combosCategory) {
+          categoryIdRef.current = combosCategory.id
+        } else {
+          throw new Error("No se encontró la categoría 'Combos'. Asegúrate de que existe en el sistema.")
+        }
+      }
 
       if (autoSlug && slugRef.current && nameRef.current) {
         const base = slugify(slugRef.current.value || nameRef.current.value)
@@ -464,28 +473,9 @@ export default function NewComboPage() {
 
             <Card className="border-0 shadow-md">
               <CardHeader>
-                <CardTitle className="text-foreground">Categoría y estado</CardTitle>
+                <CardTitle className="text-foreground">Estado</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Categoría</Label>
-                  <Select
-                    onValueChange={(v) => (categoryIdRef.current = v)}
-                    disabled={isLoadingCategories}
-                  >
-                    <SelectTrigger className="bg-secondary/50 border-transparent focus:border-primary">
-                      <SelectValue placeholder={isLoadingCategories ? "Cargando..." : "Selecciona categoría"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 <div className="space-y-2">
                   <Label>Estado</Label>
                   <Select onValueChange={(v) => (statusRef.current = v as any)} defaultValue="draft">

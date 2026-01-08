@@ -27,8 +27,6 @@ export default function EditComboPage() {
 
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingCombo, setIsLoadingCombo] = useState(true)
-  const [categories, setCategories] = useState<BackendCategory[]>([])
-  const [isLoadingCategories, setIsLoadingCategories] = useState(true)
 
   const [images, setImages] = useState<string[]>([]) // previews (existing urls)
   const [imageFiles, setImageFiles] = useState<File[]>([])
@@ -57,16 +55,6 @@ export default function EditComboPage() {
 
   const selectedIds = useMemo(() => new Set(selected.map((s) => s.productId)), [selected])
 
-  const loadCategories = async () => {
-    try {
-      setIsLoadingCategories(true)
-      const data = await api.getCategories()
-      setCategories(data)
-    } finally {
-      setIsLoadingCategories(false)
-    }
-  }
-
   const loadCombo = async () => {
     setIsLoadingCombo(true)
     setError(null)
@@ -89,7 +77,12 @@ export default function EditComboPage() {
       if (comparePriceRef.current) comparePriceRef.current.value = compare ? String(compare) : ""
 
       setIsFeatured(!!(p as any).isFeatured)
-      categoryIdRef.current = p.categoryId || ""
+      // Siempre asignar la categoría "Combos" automáticamente
+      const data = await api.getCategories()
+      const combosCategory = data.find((c: BackendCategory) => c.name.toLowerCase() === "combos" || c.slug?.toLowerCase() === "combos")
+      if (combosCategory) {
+        categoryIdRef.current = combosCategory.id
+      }
       statusRef.current = p.isActive ? "active" : "archived"
 
       const imgs = Array.isArray(p.images) ? p.images : []
@@ -114,7 +107,6 @@ export default function EditComboPage() {
   }
 
   useEffect(() => {
-    loadCategories()
     loadCombo()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
@@ -183,9 +175,19 @@ export default function EditComboPage() {
       if (!nameRef.current?.value) throw new Error("El nombre del combo es requerido")
       if (!slugRef.current?.value) throw new Error("El slug es requerido")
       if (!descriptionRef.current?.value) throw new Error("La descripción es requerida")
-      if (!categoryIdRef.current) throw new Error("Debes seleccionar una categoría")
       if (!stockRef.current?.value) throw new Error("El stock es requerido")
       if (selected.length === 0) throw new Error("Debes seleccionar al menos 1 producto para el combo")
+
+      // Si no hay categoría asignada, buscar la categoría "Combos"
+      if (!categoryIdRef.current) {
+        const data = await api.getCategories()
+        const combosCategory = data.find((c: BackendCategory) => c.name.toLowerCase() === "combos" || c.slug?.toLowerCase() === "combos")
+        if (combosCategory) {
+          categoryIdRef.current = combosCategory.id
+        } else {
+          throw new Error("No se encontró la categoría 'Combos'. Asegúrate de que existe en el sistema.")
+        }
+      }
 
       const uploadedImageUrls: string[] = []
       for (const file of imageFiles) {
@@ -465,29 +467,9 @@ export default function EditComboPage() {
 
             <Card className="border-0 shadow-md">
               <CardHeader>
-                <CardTitle className="text-foreground">Categoría y estado</CardTitle>
+                <CardTitle className="text-foreground">Estado</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Categoría</Label>
-                  <Select
-                    value={categoryIdRef.current || undefined}
-                    onValueChange={(v) => (categoryIdRef.current = v)}
-                    disabled={isLoadingCategories}
-                  >
-                    <SelectTrigger className="bg-secondary/50 border-transparent focus:border-primary">
-                      <SelectValue placeholder={isLoadingCategories ? "Cargando..." : "Selecciona categoría"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 <div className="space-y-2">
                   <Label>Estado</Label>
                   <Select onValueChange={(v) => (statusRef.current = v as any)} defaultValue="active">

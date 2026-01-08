@@ -36,6 +36,8 @@ export default function EditComboPage() {
   const [isOnSale, setIsOnSale] = useState(false)
   const [isFeatured, setIsFeatured] = useState(false)
   const [autoSlug, setAutoSlug] = useState(false) // En edición, por defecto manual
+  const [status, setStatus] = useState<"active" | "draft" | "archived">("active")
+  const [loadedData, setLoadedData] = useState<any>(null)
 
   const nameRef = useRef<HTMLInputElement>(null)
   const slugRef = useRef<HTMLInputElement>(null)
@@ -45,7 +47,6 @@ export default function EditComboPage() {
   const comparePriceRef = useRef<HTMLInputElement>(null)
   const stockRef = useRef<HTMLInputElement>(null)
   const categoryIdRef = useRef<string>("")
-  const statusRef = useRef<"active" | "draft" | "archived">("active")
 
   // Selector de productos del combo
   const [productSearch, setProductSearch] = useState("")
@@ -65,25 +66,19 @@ export default function EditComboPage() {
         return
       }
 
-      if (nameRef.current) nameRef.current.value = p.name || ""
-      if (slugRef.current) slugRef.current.value = p.slug || ""
-      if (descriptionRef.current) descriptionRef.current.value = p.description || ""
-      if (shortDescriptionRef.current) shortDescriptionRef.current.value = (p as any).shortDescription || ""
-      if (priceRef.current) priceRef.current.value = p.priceUSD ? String(p.priceUSD) : ""
-      if (stockRef.current) stockRef.current.value = String(p.stock ?? 0)
-
-      const compare = (p as any).comparePriceUSD
-      setIsOnSale(!!compare)
-      if (comparePriceRef.current) comparePriceRef.current.value = compare ? String(compare) : ""
-
-      setIsFeatured(!!(p as any).isFeatured)
       // Siempre asignar la categoría "Combos" automáticamente
       const data = await api.getCategories()
       const combosCategory = data.find((c: BackendCategory) => c.name.toLowerCase() === "combos" || c.slug?.toLowerCase() === "combos")
       if (combosCategory) {
         categoryIdRef.current = combosCategory.id
       }
-      statusRef.current = p.isActive ? "active" : "archived"
+
+      // Cargar el estado del producto, usando "active" por defecto si no está definido
+      setStatus(p.isActive === false ? "archived" : p.isActive === true ? "active" : "active")
+
+      const compare = (p as any).comparePriceUSD
+      setIsOnSale(!!compare)
+      setIsFeatured(!!(p as any).isFeatured)
 
       const imgs = Array.isArray(p.images) ? p.images : []
       setImages(imgs)
@@ -99,6 +94,17 @@ export default function EditComboPage() {
           }))
           .filter((x: any) => x.productId),
       )
+
+      // Guardar datos para establecer en campos después del render
+      setLoadedData({
+        name: p.name || "",
+        slug: p.slug || "",
+        description: p.description || "",
+        shortDescription: (p as any).shortDescription || "",
+        price: p.priceUSD ? String(p.priceUSD) : "",
+        stock: String(p.stock ?? 0),
+        comparePrice: compare ? String(compare) : "",
+      })
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || "No se pudo cargar el combo.")
     } finally {
@@ -110,6 +116,19 @@ export default function EditComboPage() {
     loadCombo()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
+
+  // Establecer valores en los campos cuando los datos estén cargados y los refs estén disponibles
+  useEffect(() => {
+    if (!isLoadingCombo && loadedData) {
+      if (nameRef.current) nameRef.current.value = loadedData.name
+      if (slugRef.current) slugRef.current.value = loadedData.slug
+      if (descriptionRef.current) descriptionRef.current.value = loadedData.description
+      if (shortDescriptionRef.current) shortDescriptionRef.current.value = loadedData.shortDescription
+      if (priceRef.current) priceRef.current.value = loadedData.price
+      if (stockRef.current) stockRef.current.value = loadedData.stock
+      if (comparePriceRef.current) comparePriceRef.current.value = loadedData.comparePrice
+    }
+  }, [isLoadingCombo, loadedData])
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -212,7 +231,7 @@ export default function EditComboPage() {
         comparePriceUSD: isOnSale ? (comparePriceRef.current?.value ? parseFloat(comparePriceRef.current.value) : undefined) : null,
         stock: parseInt(stockRef.current.value),
         categoryId: categoryIdRef.current,
-        isActive: statusRef.current === "active",
+        isActive: status === "active",
         isFeatured,
         isCombo: true,
         comboItems: selected.map((s) => ({ productId: s.productId, quantity: s.quantity })),
@@ -472,7 +491,7 @@ export default function EditComboPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Estado</Label>
-                  <Select onValueChange={(v) => (statusRef.current = v as any)} defaultValue="active">
+                  <Select value={status} onValueChange={(v) => setStatus(v as "active" | "draft" | "archived")}>
                     <SelectTrigger className="bg-secondary/50 border-transparent focus:border-primary">
                       <SelectValue />
                     </SelectTrigger>

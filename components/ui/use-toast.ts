@@ -5,8 +5,9 @@ import * as React from 'react'
 
 import type { ToastActionElement, ToastProps } from '@/components/ui/toast'
 
-const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_LIMIT = 5
+const TOAST_REMOVE_DELAY = 1000
+const TOAST_SUCCESS_DURATION = 3000 // 3 segundos para toasts de éxito
 
 type ToasterToast = ToastProps & {
   id: string
@@ -139,7 +140,7 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, 'id'>
 
-function toast({ ...props }: Toast) {
+function toast({ duration, ...props }: Toast & { duration?: number }) {
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -149,14 +150,28 @@ function toast({ ...props }: Toast) {
     })
   const dismiss = () => dispatch({ type: 'DISMISS_TOAST', toastId: id })
 
+  // Auto-dismiss para toasts de éxito (si no se especifica duration)
+  let autoDismissTimeout: ReturnType<typeof setTimeout> | null = null
+  if (duration !== undefined && duration > 0) {
+    autoDismissTimeout = setTimeout(() => {
+      dismiss()
+    }, duration)
+  }
+
   dispatch({
     type: 'ADD_TOAST',
     toast: {
       ...props,
       id,
       open: true,
+      duration: duration === undefined ? undefined : duration,
       onOpenChange: (open) => {
-        if (!open) dismiss()
+        if (!open) {
+          if (autoDismissTimeout) {
+            clearTimeout(autoDismissTimeout)
+          }
+          dismiss()
+        }
       },
     },
   })
@@ -166,6 +181,46 @@ function toast({ ...props }: Toast) {
     dismiss,
     update,
   }
+}
+
+// Funciones helper para diferentes tipos de toasts
+function showSuccess(title: string, description?: string) {
+  return toast({
+    title,
+    description,
+    variant: 'default',
+    duration: TOAST_SUCCESS_DURATION,
+    className: 'bg-green-50 border-green-200 text-green-900',
+  })
+}
+
+function showError(title: string, description?: string) {
+  return toast({
+    title,
+    description,
+    variant: 'destructive',
+    duration: 0, // Los errores no se auto-cierran
+  })
+}
+
+function showInfo(title: string, description?: string) {
+  return toast({
+    title,
+    description,
+    variant: 'default',
+    duration: TOAST_SUCCESS_DURATION,
+    className: 'bg-blue-50 border-blue-200 text-blue-900',
+  })
+}
+
+function showWarning(title: string, description?: string) {
+  return toast({
+    title,
+    description,
+    variant: 'default',
+    duration: TOAST_SUCCESS_DURATION,
+    className: 'bg-yellow-50 border-yellow-200 text-yellow-900',
+  })
 }
 
 function useToast() {
@@ -184,8 +239,12 @@ function useToast() {
   return {
     ...state,
     toast,
+    showSuccess,
+    showError,
+    showInfo,
+    showWarning,
     dismiss: (toastId?: string) => dispatch({ type: 'DISMISS_TOAST', toastId }),
   }
 }
 
-export { useToast, toast }
+export { useToast, toast, showSuccess, showError, showInfo, showWarning }

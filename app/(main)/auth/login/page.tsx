@@ -9,6 +9,7 @@ import * as z from "zod"
 import { api } from "@/lib/api"
 import { useAuthStore } from "@/lib/store/auth-store"
 import { Eye, EyeOff } from "lucide-react"
+import { showSuccess, showError } from "@/components/ui/use-toast"
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -47,11 +48,16 @@ export default function LoginPage() {
       } catch (e) {
         // No bloquear el login si falla el fetch del perfil
       }
+      showSuccess(
+        "¡Bienvenido!",
+        `Hola ${user.firstName || user.email}, has iniciado sesión correctamente.`
+      )
       router.push("/")
     } catch (err: any) {
       console.error("Error en login:", err)
       const errorMessage = err.response?.data?.message || err.message || "Error al iniciar sesión. Verifica tus credenciales."
       setError(errorMessage)
+      showError("Error al iniciar sesión", errorMessage)
     }
   }
 

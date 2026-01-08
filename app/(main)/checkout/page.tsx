@@ -15,6 +15,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatPrice } from '@/lib/utils';
 import { SupernovaWidget } from '@/components/payment/supernova-widget';
 import { isCatalogMode } from '@/lib/catalog-mode';
+import { useCartValidation } from '@/hooks/use-cart-validation';
+import { AlertTriangle } from 'lucide-react';
+import { showSuccess, showError } from '@/components/ui/use-toast';
 
 const checkoutSchema = z.object({
   firstName: z.string().min(1, 'Nombre requerido'),
@@ -36,7 +39,8 @@ export default function CheckoutPage() {
   const [shippingData, setShippingData] = useState<CheckoutForm | null>(null);
   const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
-  const { items, subtotal, clearCart } = useCartStore();
+  const { items, subtotal, clearCart, fetchCart } = useCartStore();
+  const { validation, validateCart, isValid, hasIssues, loading: validationLoading } = useCartValidation();
 
   const {
     register,
@@ -64,14 +68,36 @@ export default function CheckoutPage() {
 
     if (items.length === 0) {
       router.push('/cart');
+      return;
     }
-  }, [isAuthenticated, items, router]);
+
+    // Validar el carrito al entrar al checkout
+    validateCart();
+  }, [isAuthenticated, items, router, validateCart]);
+
+  // Redirigir si hay problemas de stock
+  useEffect(() => {
+    if (validation && hasIssues) {
+      // Mostrar error pero no redirigir automáticamente para que el usuario vea qué está mal
+      setError('Hay problemas con el stock de algunos productos. Por favor, revisa tu carrito.');
+    }
+  }, [validation, hasIssues]);
 
   const onSubmit = async (data: CheckoutForm) => {
     setLoading(true);
     setError('');
 
     try {
+      // Validar el carrito antes de proceder
+      await validateCart();
+      
+      // Si hay problemas de stock, no permitir continuar
+      if (hasIssues) {
+        setError('Hay problemas con el stock de algunos productos. Por favor, actualiza tu carrito y vuelve a intentar.');
+        setLoading(false);
+        return;
+      }
+
       // Crear la orden primero (sin procesar el pago aún)
       const orderData = {
         shippingAddress: data,
@@ -83,8 +109,14 @@ export default function CheckoutPage() {
       setOrderId(response.data.id);
       setShippingData(data);
       setShowPayment(true);
+      showSuccess(
+        'Orden creada',
+        'Tu orden ha sido creada exitosamente. Procede con el pago.'
+      );
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al crear el pedido');
+      const errorMessage = err.response?.data?.message || 'Error al crear el pedido';
+      setError(errorMessage);
+      showError('Error al crear la orden', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -101,11 +133,19 @@ export default function CheckoutPage() {
       }
       
       clearCart();
+      showSuccess(
+        'Pago exitoso',
+        'Tu orden ha sido procesada correctamente. Gracias por tu compra.'
+      );
       router.push(`/profile?order=${orderId}&success=true`);
     } catch (err: any) {
       console.error('Error al actualizar la orden:', err);
       // Aún así redirigir, el pago ya fue exitoso
       clearCart();
+      showSuccess(
+        'Pago exitoso',
+        'Tu orden ha sido procesada correctamente. Gracias por tu compra.'
+      );
       router.push(`/profile?order=${orderId}&success=true`);
     }
   };
@@ -132,7 +172,52 @@ export default function CheckoutPage() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                  {error && <p className="text-sm text-destructive">{error}</p>}
+                  {/* Alertas de validación de stock */}
+                  {validation && hasIssues && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-red-900 mb-2">Problemas de disponibilidad</h3>
+                          <ul className="space-y-1 text-sm text-red-800">
+                            {validation.items
+                              .filter((item) => item.issue !== null)
+                              .map((item) => {
+                                const variantText = item.variantName ? ` (${item.variantName})` : '';
+                                let message = '';
+                                switch (item.issue) {
+                                  case 'out_of_stock':
+                                    message = `"${item.productName}${variantText}" ya no está disponible`;
+                                    break;
+                                  case 'insufficient_stock':
+                                    message = `Solo ${item.availableStock} disponible${item.availableStock > 1 ? 's' : ''} de "${item.productName}${variantText}"`;
+                                    break;
+                                  case 'unavailable':
+                                    message = `"${item.productName}${variantText}" ya no está disponible`;
+                                    break;
+                                }
+                                return message ? (
+                                  <li key={item.itemId} className="flex items-start gap-2">
+                                    <span className="text-red-600 mt-1">•</span>
+                                    <span>{message}</span>
+                                  </li>
+                                ) : null;
+                              })}
+                          </ul>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="mt-3"
+                            onClick={() => router.push('/cart')}
+                          >
+                            Ir al carrito
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {error && <p className="text-sm text-destructive">{error}</p>}}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -193,8 +278,13 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                  <Button type="submit" className="w-full" size="lg" disabled={loading}>
-                    {loading ? 'Creando pedido...' : 'Continuar al Pago'}
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    size="lg" 
+                    disabled={loading || validationLoading || (validation && hasIssues)}
+                  >
+                    {loading ? 'Creando pedido...' : validationLoading ? 'Validando...' : (validation && hasIssues) ? 'Resuelve los problemas de stock' : 'Continuar al Pago'}
                   </Button>
                 </form>
               </CardContent>

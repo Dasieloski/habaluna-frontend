@@ -6,6 +6,7 @@ import { ProductCard } from "@/components/product/product-card"
 import { ProductPrice } from "@/components/product/product-price"
 import { toNumber } from "@/lib/money"
 import { useToast } from "@/hooks/use-toast"
+import { showSuccess, showError } from "@/components/ui/use-toast"
 import { api } from "@/lib/api"
 import { useCartStore } from "@/lib/store/cart-store"
 import {
@@ -423,13 +424,16 @@ export function ProductClient({ product, relatedProducts = [], reviews = [] }: P
                         : null,
                       quantity,
                     })
-                    toast({ title: "Añadido al carrito" })
+                    showSuccess(
+                      "Producto agregado",
+                      `${product.name}${selectedVariant ? ` - ${selectedVariant.name}` : ''} se agregó al carrito`
+                    )
                   } catch (err: any) {
-                    toast({
-                      title: "No se pudo añadir",
-                      description: err?.response?.data?.message || err?.message || "Intenta nuevamente.",
-                      variant: "destructive",
-                    })
+                    const errorMessage = err.response?.data?.message || err.message || "No se pudo añadir al carrito"
+                    showError(
+                      "Error al agregar",
+                      errorMessage
+                    )
                   }
                 }}
                 className="flex-1 flex items-center justify-center gap-2 bg-foreground text-background py-3.5 md:py-4 px-6 rounded-xl font-semibold hover:bg-foreground/90 transition-all text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"

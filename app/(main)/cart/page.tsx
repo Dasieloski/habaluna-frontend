@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Minus, Plus, Trash2, ChevronDown, ChevronUp, Truck, Gift, ShoppingBag } from "lucide-react"
+import { Minus, Plus, Trash2, ChevronDown, ChevronUp, Truck, Gift, ShoppingBag, AlertTriangle } from "lucide-react"
 import { useCartStore } from "@/lib/store/cart-store"
 import { useAuthStore } from "@/lib/store/auth-store"
+import { useCartValidation } from "@/hooks/use-cart-validation"
 
 // Productos sugeridos
 const suggestedProducts = [
@@ -34,6 +35,7 @@ export default function CartPage() {
   const [couponCode, setCouponCode] = useState("")
   const { isAuthenticated } = useAuthStore()
   const { items, subtotal, fetchCart, updateItemQuantity, removeItem } = useCartStore()
+  const { validation, getItemErrorMessage, hasItemIssue, getItemAvailableStock } = useCartValidation()
 
   useEffect(() => {
     if (isAuthenticated()) {
@@ -80,6 +82,31 @@ export default function CartPage() {
           Tu carrito de la compra
         </h1>
 
+        {/* Alertas de stock */}
+        {validation && validation.hasIssues && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-red-900 mb-2">Problemas de disponibilidad</h3>
+                <ul className="space-y-1 text-sm text-red-800">
+                  {validation.items
+                    .filter((item) => item.issue !== null)
+                    .map((item) => {
+                      const errorMsg = getItemErrorMessage(item.itemId)
+                      return errorMsg ? (
+                        <li key={item.itemId} className="flex items-start gap-2">
+                          <span className="text-red-600 mt-1">•</span>
+                          <span>{errorMsg}</span>
+                        </li>
+                      ) : null
+                    })}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Barra de progreso envío gratis */}
         <div className="bg-white rounded-xl p-4 mb-6 flex items-center gap-4">
           <div className="flex-1">
@@ -123,13 +150,43 @@ export default function CartPage() {
                     />
                   </div>
 
-                  {/* Info del producto */}
+                    {/* Info del producto */}
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-gray-900 text-sm md:text-base mb-1 truncate">{item.product.name}</h3>
                     <p className="text-xs md:text-sm text-gray-500 mb-2">Opción: {option}</p>
-                    <div className="flex items-center gap-2 mb-3">
+                    <div className="flex items-center gap-2 mb-2">
                       <span className="font-bold text-sky-600">${price.toFixed(2)}</span>
                     </div>
+                    
+                    {/* Alerta de stock para este item */}
+                    {hasItemIssue(item.id) && (
+                      <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-xs text-red-700 font-medium flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          {getItemErrorMessage(item.id)}
+                        </p>
+                        {(() => {
+                          const availableStock = getItemAvailableStock(item.id)
+                          return availableStock !== null && availableStock > 0 ? (
+                            <p className="text-xs text-red-600 mt-1">
+                              Stock disponible: {availableStock}
+                            </p>
+                          ) : null
+                        })()}
+                      </div>
+                    )}
+                    
+                    {/* Indicador de stock disponible */}
+                    {!hasItemIssue(item.id) && (() => {
+                      const availableStock = getItemAvailableStock(item.id)
+                      return availableStock !== null ? (
+                        <p className="text-xs text-gray-500 mb-3">
+                          {availableStock > 0 
+                            ? `${availableStock} disponible${availableStock > 1 ? 's' : ''}`
+                            : 'En stock'}
+                        </p>
+                      ) : null
+                    })()}
 
                     {/* Acciones móvil y desktop */}
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -151,16 +208,25 @@ export default function CartPage() {
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => updateItemQuantity(item.id, item.quantity - 1)}
-                            className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:border-sky-500 hover:text-sky-500 transition-colors"
+                            className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:border-sky-500 hover:text-sky-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             aria-label="Reducir cantidad"
+                            disabled={item.quantity <= 1}
                           >
                             <Minus className="h-3 w-3" />
                           </button>
                           <span className="w-8 text-center font-medium text-sky-600">{item.quantity}</span>
                           <button
-                            onClick={() => updateItemQuantity(item.id, item.quantity + 1)}
-                            className="w-8 h-8 flex items-center justify-center rounded-full bg-sky-500 text-white hover:bg-sky-600 transition-colors"
+                            onClick={() => {
+                              const availableStock = getItemAvailableStock(item.id)
+                              const maxQuantity = availableStock !== null ? availableStock : item.quantity + 1
+                              updateItemQuantity(item.id, Math.min(item.quantity + 1, maxQuantity))
+                            }}
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-sky-500 text-white hover:bg-sky-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             aria-label="Aumentar cantidad"
+                            disabled={(() => {
+                              const availableStock = getItemAvailableStock(item.id)
+                              return availableStock !== null && item.quantity >= availableStock
+                            })()}
                           >
                             <Plus className="h-3 w-3" />
                           </button>
@@ -262,9 +328,18 @@ export default function CartPage() {
               </div>
 
               {/* Botón finalizar compra */}
-              <button className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3 md:py-4 rounded-full font-medium transition-colors">
-                Finalizar compra
-              </button>
+              <Link
+                href="/checkout"
+                className={`w-full ${
+                  validation && validation.hasIssues
+                    ? 'bg-gray-400 cursor-not-allowed pointer-events-none'
+                    : 'bg-gray-900 hover:bg-gray-800'
+                } text-white py-3 md:py-4 rounded-full font-medium transition-colors block text-center`}
+              >
+                {validation && validation.hasIssues
+                  ? 'Resuelve los problemas de stock'
+                  : 'Finalizar compra'}
+              </Link>
             </div>
           </div>
         </div>

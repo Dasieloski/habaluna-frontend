@@ -358,6 +358,10 @@ export const api = {
     search?: string
     isFeatured?: boolean
     isCombo?: boolean
+    minPrice?: number
+    maxPrice?: number
+    inStock?: boolean
+    sortBy?: 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc' | 'created-desc'
   }): Promise<ProductsResponse> => {
     const queryParams = new URLSearchParams()
     if (params?.page) queryParams.append('page', params.page.toString())
@@ -366,6 +370,10 @@ export const api = {
     if (params?.search) queryParams.append('search', params.search)
     if (params?.isFeatured !== undefined) queryParams.append('isFeatured', params.isFeatured.toString())
     if (params?.isCombo !== undefined) queryParams.append('isCombo', params.isCombo.toString())
+    if (params?.minPrice !== undefined) queryParams.append('minPrice', params.minPrice.toString())
+    if (params?.maxPrice !== undefined) queryParams.append('maxPrice', params.maxPrice.toString())
+    if (params?.inStock !== undefined) queryParams.append('inStock', params.inStock.toString())
+    if (params?.sortBy) queryParams.append('sortBy', params.sortBy)
 
     const queryString = queryParams.toString()
     const endpoint = `/products${queryString ? `?${queryString}` : ''}`
@@ -959,6 +967,17 @@ export const api = {
       formattedError.response = { data: { message: error.message || "Error de conexión" } }
       throw formattedError
     }
+  },
+
+  // Auth: recuperación de contraseña
+  forgotPassword: async (email: string) => {
+    const response = await api.post("/auth/forgot-password", { email })
+    return response.data as { message: string }
+  },
+
+  resetPassword: async (token: string, newPassword: string) => {
+    const response = await api.post("/auth/reset-password", { token, newPassword })
+    return response.data as { message: string }
   },
 }
 

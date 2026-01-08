@@ -97,8 +97,26 @@ export const useCartStore = create<CartState>()(
           });
           await get().fetchCart();
           return;
-        } catch (e) {
-          // fallback local
+        } catch (e: any) {
+          // Si es un error de stock, lanzarlo para que el componente pueda manejarlo
+          if (e.response?.data?.message && (
+            e.response.data.message.includes('stock') || 
+            e.response.data.message.includes('disponible') ||
+            e.response.data.message.includes('Stock')
+          )) {
+            throw e;
+          }
+          // Para otros errores, fallback local solo si no hay autenticación
+          const authStore = useAuthStore.getState();
+          if (authStore.isAuthenticated()) {
+            throw e;
+          }
+        }
+
+        // Solo usar fallback local si no hay autenticación
+        const authStore = useAuthStore.getState();
+        if (authStore.isAuthenticated()) {
+          return; // No debería llegar aquí si está autenticado
         }
 
         const key = `local-${product.id}-${productVariant?.id || 'default'}`;
@@ -123,10 +141,29 @@ export const useCartStore = create<CartState>()(
             await api.patch(`/cart/${itemId}`, { quantity });
             await get().fetchCart();
             return;
-          } catch (e) {
-            // fallback local update
+          } catch (e: any) {
+            // Si es un error de stock, lanzarlo para que el componente pueda manejarlo
+            if (e.response?.data?.message && (
+              e.response.data.message.includes('stock') || 
+              e.response.data.message.includes('disponible') ||
+              e.response.data.message.includes('Stock')
+            )) {
+              throw e;
+            }
+            // Para otros errores, fallback local solo si no hay autenticación
+            const authStore = useAuthStore.getState();
+            if (authStore.isAuthenticated()) {
+              throw e;
+            }
           }
         }
+        
+        // Solo usar fallback local si no hay autenticación
+        const authStore = useAuthStore.getState();
+        if (authStore.isAuthenticated() && !itemId.startsWith('local-')) {
+          return; // No debería llegar aquí si está autenticado
+        }
+        
         const nextItems = get().items.map((i) => (i.id === itemId ? { ...i, quantity } : i));
         const subtotal = computeSubtotal(nextItems);
         set({ items: nextItems, subtotal, total: subtotal });

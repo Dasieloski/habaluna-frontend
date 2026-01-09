@@ -13,6 +13,8 @@ import { api, type BackendProduct } from "@/lib/api"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Button } from "@/components/ui/button"
 import { Heart } from "lucide-react"
+import { AnimatedList } from "@/components/ui/animated-list"
+import { WishlistItemSkeleton } from "@/components/wishlist/wishlist-item-skeleton"
 
 function normalizeImageUrl(imagePath: string): string {
   if (!imagePath) return "/placeholder.svg"

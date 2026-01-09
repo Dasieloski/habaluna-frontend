@@ -330,11 +330,32 @@ export const api = {
         headers['Authorization'] = `Bearer ${token}`
       }
 
-      const response = await fetch(finalUrl, {
-        headers,
-        // Evitar respuestas cacheadas (especialmente en Server Components / producción)
-        cache: "no-store",
-      })
+      // Retry logic para requests fallidos (solo en cliente)
+      const fetchWithRetry = async (): Promise<Response> => {
+        if (typeof window !== 'undefined') {
+          // Solo usar retry en el cliente
+          const { retryFetch } = await import('./api-retry');
+          return retryFetch(
+            () => fetch(finalUrl, {
+              headers,
+              cache: "no-store",
+            }),
+            {
+              maxRetries: 2, // Máximo 2 reintentos (3 intentos totales)
+              initialDelay: 500,
+              retryableStatuses: [408, 429, 500, 502, 503, 504],
+            }
+          );
+        }
+        // En servidor, fetch normal
+        return fetch(finalUrl, {
+          headers,
+          cache: "no-store",
+        });
+      };
+
+      const response = await fetchWithRetry();
+      
       if (!response.ok) {
         // Si es 401, limpiar tokens (sesión expirada) para evitar spam de requests con token inválido
         if (response.status === 401) {
@@ -600,6 +621,23 @@ export const api = {
   deleteOffer: async (id: string) => {
     const response = await api.delete(`/offers/admin/${id}`)
     return response.data
+  },
+
+  // Validar cupón/offer
+  validateOffer: async (code: string, subtotal: number) => {
+    const response = await api.post('/offers/validate', { code, subtotal })
+    return response.data as {
+      valid: boolean
+      discount: number
+      offer?: {
+        id: string
+        name: string
+        code: string
+        type: BackendOfferType
+        value: string | number
+      }
+      message?: string
+    }
   },
 
   // Reseñas (público)

@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { X, Filter, Search, SlidersHorizontal } from 'lucide-react';
+import { X, Filter, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -13,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { api } from '@/lib/api';
+import { SearchAutocomplete } from './search-autocomplete';
 
 interface ProductFiltersProps {
   categories?: Array<{ id: string; name: string; slug: string }>;
@@ -106,17 +105,12 @@ export function ProductFilters({ categories = [] }: ProductFiltersProps) {
     <div className="mb-6">
       {/* Barra de búsqueda y filtros principales */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        {/* Búsqueda */}
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input
-            type="text"
-            placeholder="Buscar productos..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
+        {/* Búsqueda con autocompletado */}
+        <SearchAutocomplete
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Buscar productos..."
+        />
 
         {/* Botón de filtros avanzados */}
         <Button

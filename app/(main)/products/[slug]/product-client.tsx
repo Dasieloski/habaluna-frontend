@@ -188,10 +188,10 @@ export function ProductClient({
       </div>
 
       {/* Product Section */}
-      <section className="container mx-auto px-4 pb-8 md:pb-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 lg:gap-12">
+      <section className="container mx-auto px-4 pb-8 md:pb-16 max-w-7xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 lg:gap-12 items-start">
           {/* Left - Gallery */}
-          <div className="w-full max-w-full">
+          <div className="w-full overflow-hidden" style={{ maxWidth: '100%' }}>
             <div className="flex flex-col-reverse md:flex-row gap-3 md:gap-4">
               {/* Thumbnails */}
               <div className="flex md:flex-col gap-2 md:gap-3 overflow-x-auto md:overflow-visible pb-2 md:pb-0 shrink-0">
@@ -199,7 +199,7 @@ export function ProductClient({
                   <button
                     key={idx}
                     onClick={() => setSelectedImage(idx)}
-                    className={`shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg md:rounded-xl overflow-hidden border-2 transition-all ${
+                    className={`shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg md:rounded-xl overflow-hidden border-2 transition-all relative ${
                       selectedImage === idx
                         ? "border-sky-500 ring-2 ring-sky-200"
                         : "border-transparent hover:border-gray-200"
@@ -219,7 +219,7 @@ export function ProductClient({
               </div>
 
               {/* Main Image */}
-              <div className="relative flex-1 min-w-0 aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl md:rounded-2xl overflow-hidden">
+              <div className="relative w-full aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl md:rounded-2xl overflow-hidden">
                 <OptimizedImage
                   src={images[selectedImage] || "/placeholder.svg"}
                   alt={product?.name || "Producto"}
@@ -252,7 +252,7 @@ export function ProductClient({
           </div>
 
           {/* Right - Product Info */}
-          <div className="w-full flex flex-col relative z-10 min-w-0">
+          <div className="w-full flex flex-col bg-white relative z-10" style={{ minWidth: 0 }}>
             {/* Category */}
             {product?.category?.name && (
               <span className="text-xs md:text-sm text-sky-600 font-medium mb-1 md:mb-2">{product.category.name}</span>

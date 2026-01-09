@@ -217,7 +217,7 @@ export default function CheckoutPage() {
                     </div>
                   )}
                   
-                  {error && <p className="text-sm text-destructive">{error}</p>}}
+                  {error && <p className="text-sm text-destructive">{error}</p>}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">

@@ -1,18 +1,52 @@
-import * as React from 'react'
+'use client';
 
+import * as React from 'react'
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
-function Card({ className, ...props }: React.ComponentProps<'div'>) {
+interface CardProps extends React.ComponentProps<'div'> {
+  /**
+   * Si es false, desactiva las animaciones de hover
+   * Por defecto: true
+   */
+  enableAnimations?: boolean;
+}
+
+/**
+ * Card component con microinteracciones profesionales
+ * 
+ * Microinteracciones incluidas:
+ * - Hover: ligero lift y sombra más pronunciada
+ * - Transición suave al hacer hover
+ * 
+ * Para desactivar animaciones: <Card enableAnimations={false} />
+ */
+function Card({ className, enableAnimations = true, ...props }: CardProps) {
+  const baseClasses = cn(
+    'bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm transition-shadow duration-300',
+    enableAnimations && 'hover:shadow-md',
+    className,
+  );
+
+  if (!enableAnimations) {
+    return (
+      <div
+        data-slot="card"
+        className={baseClasses}
+        {...props}
+      />
+    );
+  }
+
   return (
-    <div
+    <motion.div
       data-slot="card"
-      className={cn(
-        'bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm',
-        className,
-      )}
-      {...props}
+      className={baseClasses}
+      whileHover={{ y: -2 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+      {...(props as any)}
     />
-  )
+  );
 }
 
 function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {

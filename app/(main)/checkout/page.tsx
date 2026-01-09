@@ -25,6 +25,7 @@ import { isCatalogMode } from '@/lib/catalog-mode';
 import { useCartValidation } from '@/hooks/use-cart-validation';
 import { AlertTriangle, Tag, X } from 'lucide-react';
 import { showSuccess, showError } from '@/components/ui/use-toast';
+import { FormError } from '@/components/ui/form-error';
 
 const checkoutSchema = z.object({
   firstName: z.string().min(1, 'Nombre requerido'),
@@ -276,14 +277,14 @@ export default function CheckoutPage() {
                     </div>
                   )}
                   
-                  {error && <p className="text-sm text-destructive">{error}</p>}
+                  {error && <FormError message={error} />}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="firstName">Nombre</Label>
                     <Input id="firstName" {...register('firstName')} />
                     {errors.firstName && (
-                      <p className="text-sm text-destructive">{errors.firstName.message}</p>
+                      <FormError message={errors.firstName.message} />
                     )}
                   </div>
 
@@ -291,7 +292,7 @@ export default function CheckoutPage() {
                     <Label htmlFor="lastName">Apellidos</Label>
                     <Input id="lastName" {...register('lastName')} />
                     {errors.lastName && (
-                      <p className="text-sm text-destructive">{errors.lastName.message}</p>
+                      <FormError message={errors.lastName.message} />
                     )}
                   </div>
                 </div>
@@ -304,7 +305,7 @@ export default function CheckoutPage() {
                     placeholder="Calle, número, entre calles"
                   />
                   {errors.address && (
-                    <p className="text-sm text-destructive">{errors.address.message}</p>
+                    <FormError message={errors.address.message} />
                   )}
                 </div>
 
@@ -337,7 +338,7 @@ export default function CheckoutPage() {
                       </SelectContent>
                     </Select>
                     {errors.municipality && (
-                      <p className="text-sm text-destructive">{errors.municipality.message}</p>
+                      <FormError message={errors.municipality.message} />
                     )}
                   </div>
 
@@ -351,7 +352,7 @@ export default function CheckoutPage() {
                       className="bg-gray-50"
                     />
                     {errors.city && (
-                      <p className="text-sm text-destructive">{errors.city.message}</p>
+                      <FormError message={errors.city.message} />
                     )}
                   </div>
                 </div>
@@ -365,7 +366,7 @@ export default function CheckoutPage() {
                       placeholder="Ej: 10400"
                     />
                     {errors.zipCode && (
-                      <p className="text-sm text-destructive">{errors.zipCode.message}</p>
+                      <FormError message={errors.zipCode.message} />
                     )}
                   </div>
 
@@ -379,7 +380,7 @@ export default function CheckoutPage() {
                       className="bg-gray-50"
                     />
                     {errors.country && (
-                      <p className="text-sm text-destructive">{errors.country.message}</p>
+                      <FormError message={errors.country.message} />
                     )}
                   </div>
                 </div>
@@ -393,7 +394,7 @@ export default function CheckoutPage() {
                       placeholder="Ej: +53 5XXXXXXXX"
                     />
                     {errors.phone && (
-                      <p className="text-sm text-destructive">{errors.phone.message}</p>
+                      <FormError message={errors.phone.message} />
                     )}
                   </div>
 
@@ -424,7 +425,7 @@ export default function CheckoutPage() {
                 <CardTitle>Completa tu Pago</CardTitle>
               </CardHeader>
               <CardContent>
-                {error && <p className="text-sm text-destructive mb-4">{error}</p>}
+                {error && <FormError message={error} className="mb-4" />}
                 {orderId && (
                   <SupernovaWidget
                     amount={total.toFixed(2)}
@@ -483,7 +484,7 @@ export default function CheckoutPage() {
                       </Button>
                     </div>
                     {couponError && (
-                      <p className="text-sm text-destructive">{couponError}</p>
+                      <FormError message={couponError} />
                     )}
                   </div>
                 ) : (

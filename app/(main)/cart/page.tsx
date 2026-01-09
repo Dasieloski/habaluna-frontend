@@ -10,21 +10,35 @@ import { useCartValidation } from "@/hooks/use-cart-validation"
 import { api, mapBackendProductToFrontend } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { OptimizedImage } from "@/components/ui/optimized-image"
+import { EmptyState } from "@/components/ui/empty-state"
+import { Button } from "@/components/ui/button"
+import { CartItemSkeleton } from "@/components/cart/cart-item-skeleton"
 
 export default function CartPage() {
   const [showCoupon, setShowCoupon] = useState(false)
   const [couponCode, setCouponCode] = useState("")
   const [suggestedProducts, setSuggestedProducts] = useState<any[]>([])
   const [loadingSuggestions, setLoadingSuggestions] = useState(true)
+  const [isLoadingCart, setIsLoadingCart] = useState(true)
   const { isAuthenticated } = useAuthStore()
   const { items, subtotal, fetchCart, updateItemQuantity, removeItem, addToCart } = useCartStore()
   const { validation, getItemErrorMessage, hasItemIssue, getItemAvailableStock } = useCartValidation()
   const { toast } = useToast()
 
   useEffect(() => {
-    if (isAuthenticated()) {
-      fetchCart()
+    const loadCart = async () => {
+      if (isAuthenticated()) {
+        setIsLoadingCart(true)
+        try {
+          await fetchCart()
+        } finally {
+          setIsLoadingCart(false)
+        }
+      } else {
+        setIsLoadingCart(false)
+      }
     }
+    loadCart()
   }, [fetchCart, isAuthenticated])
 
   // Cargar productos sugeridos
@@ -117,19 +131,34 @@ export default function CartPage() {
   const progressPercent = Math.min((subtotal / shippingThreshold) * 100, 100)
   const isFreeShipping = subtotal >= shippingThreshold
 
+  // Mostrar skeleton mientras carga el carrito
+  if (isLoadingCart) {
+    return (
+      <div className="bg-gray-50 min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 py-6 md:py-10">
+          <div className="space-y-4">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <CartItemSkeleton key={index} />
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (items.length === 0) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 py-12">
-        <ShoppingBag className="h-24 w-24 text-gray-300 mb-6" strokeWidth={1} />
-        <h2 className="text-2xl font-semibold text-gray-800 mb-2">Tu carrito está vacío</h2>
-        <p className="text-gray-500 mb-6">Añade algunos productos para empezar</p>
-        <Link
-          href="/products"
-          className="bg-sky-500 hover:bg-sky-600 text-white px-8 py-3 rounded-full font-medium transition-colors"
-        >
-          Explorar Productos
-        </Link>
-      </div>
+      <EmptyState
+        icon={<ShoppingBag className="h-24 w-24" strokeWidth={1} />}
+        title="Tu carrito está vacío"
+        description="Añade algunos productos para empezar"
+        action={
+          <Button asChild>
+            <Link href="/products">Explorar Productos</Link>
+          </Button>
+        }
+        className="min-h-[60vh]"
+      />
     )
   }
 
@@ -340,7 +369,6 @@ export default function CartPage() {
                                 className="object-cover"
                                 sizes="160px"
                                 objectFit="cover"
-                                loading="lazy"
                               />
                             </div>
                           </Link>

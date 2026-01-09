@@ -10,6 +10,9 @@ import { useWishlistStore } from "@/lib/store/wishlist-store"
 import { useCartStore } from "@/lib/store/cart-store"
 import { useToast } from "@/hooks/use-toast"
 import { api, type BackendProduct } from "@/lib/api"
+import { EmptyState } from "@/components/ui/empty-state"
+import { Button } from "@/components/ui/button"
+import { Heart } from "lucide-react"
 
 function normalizeImageUrl(imagePath: string): string {
   if (!imagePath) return "/placeholder.svg"
@@ -28,11 +31,22 @@ export default function WishlistPage() {
   const addToCart = useCartStore((s) => s.addToCart)
   const [trendingScroll, setTrendingScroll] = useState(0)
   const [bestSellers, setBestSellers] = useState<BackendProduct[]>([])
+  const [isLoadingWishlist, setIsLoadingWishlist] = useState(true)
 
   useEffect(() => {
-    if (isAuthenticated()) {
-      fetchWishlist()
+    const loadWishlist = async () => {
+      if (isAuthenticated()) {
+        setIsLoadingWishlist(true)
+        try {
+          await fetchWishlist()
+        } finally {
+          setIsLoadingWishlist(false)
+        }
+      } else {
+        setIsLoadingWishlist(false)
+      }
     }
+    loadWishlist()
   }, [fetchWishlist, isAuthenticated])
 
   useEffect(() => {
@@ -90,29 +104,36 @@ export default function WishlistPage() {
           <span className="text-sm sm:text-base text-gray-500">{items.length} productos</span>
         </div>
 
-        {/* Empty state or products */}
-        {items.length === 0 ? (
-          <div className="bg-gray-50 rounded-lg p-6 sm:p-8 mb-10 sm:mb-16">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 text-center mb-4">
-              Tu lista de deseos está vacía
-            </h2>
-            <p className="text-sm sm:text-base text-gray-600 text-center max-w-2xl mx-auto leading-relaxed">
-              Con la lista de deseos puedes marcar los productos para que sea más fácil 1) volver a encontrarlos en
-              cualquier momento y 2) añadirlos a tu cesta de la compra con un solo clic. Sólo tienes que pinchar en el
-              corazoncito de la parte superior derecha de la imagen del producto. A menos que ya seas feliz como una
-              perdiz. Pero un regalito ayudaría a estar mejor ¿no?
-            </p>
-            {!isAuthenticated() && (
-              <div className="mt-6 flex justify-center">
-                <Link
-                  href="/auth/login"
-                  className="px-6 py-3 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-lg transition-colors"
-                >
-                  Iniciar sesión
-                </Link>
-              </div>
-            )}
-          </div>
+        {/* Loading state */}
+        {isLoadingWishlist ? (
+          <AnimatedList
+            staggerDelay={0.04}
+            enableAnimations={true}
+            animateOnViewport={false}
+            className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-10 sm:mb-16"
+          >
+            {Array.from({ length: 8 }).map((_, index) => (
+              <WishlistItemSkeleton key={index} />
+            ))}
+          </AnimatedList>
+        ) : items.length === 0 ? (
+          <EmptyState
+            icon={<Heart className="h-20 w-20 text-gray-300" strokeWidth={1} />}
+            title="Tu lista de deseos está vacía"
+            description="Con la lista de deseos puedes marcar los productos para que sea más fácil 1) volver a encontrarlos en cualquier momento y 2) añadirlos a tu cesta de la compra con un solo clic. Sólo tienes que pinchar en el corazoncito de la parte superior derecha de la imagen del producto. A menos que ya seas feliz como una perdiz. Pero un regalito ayudaría a estar mejor ¿no?"
+            action={
+              !isAuthenticated() ? (
+                <Button asChild variant="default">
+                  <Link href="/auth/login">Iniciar sesión</Link>
+                </Button>
+              ) : (
+                <Button asChild variant="outline">
+                  <Link href="/products">Explorar Productos</Link>
+                </Button>
+              )
+            }
+            className="bg-gray-50 rounded-lg p-6 sm:p-8 mb-10 sm:mb-16"
+          />
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-10 sm:mb-16">
             {items.map((wi) => {

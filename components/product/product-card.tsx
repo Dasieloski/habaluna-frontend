@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
+import { motion } from "framer-motion"
 import { HeartIcon } from "@/components/icons/streamline-icons"
 import { Star } from "lucide-react"
 import { toNumber } from "@/lib/money"
@@ -10,6 +11,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useAuthStore } from "@/lib/store/auth-store"
 import { useWishlistStore } from "@/lib/store/wishlist-store"
 import { OptimizedImage } from "@/components/ui/optimized-image"
+import { useReducedMotion } from "@/hooks/use-reduced-motion"
 
 interface ProductCardProps {
   product: {
@@ -45,6 +47,7 @@ export function ProductCard({ product, badge, badgeColor = "coral" }: ProductCar
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const toggleWishlist = useWishlistStore((s) => s.toggle)
   const isInWishlist = useWishlistStore((s) => s.isInWishlist(product.id))
+  const prefersReducedMotion = useReducedMotion()
 
   const price = toNumber(product.variants?.[0]?.priceUSD ?? product.priceUSD) ?? 0
   const comparePrice = toNumber(product.variants?.[0]?.comparePriceUSD ?? product.comparePriceUSD)
@@ -60,14 +63,26 @@ export function ProductCard({ product, badge, badgeColor = "coral" }: ProductCar
     mint: "bg-gradient-to-r from-teal-400 to-cyan-400 text-white",
   }
 
+  const CardWrapper = prefersReducedMotion ? 'div' : motion.div;
+  const cardProps = prefersReducedMotion
+    ? { className: 'group' }
+    : {
+        initial: { opacity: 0, y: 20 },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.3, ease: 'easeOut' },
+        whileHover: { y: -4 },
+        className: 'group',
+      };
+
   return (
-    <Link
-      href={`/products/${product.slug}`}
-      className="group block"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div className="relative bg-white rounded-xl md:rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+    <CardWrapper {...cardProps}>
+      <Link
+        href={`/products/${product.slug}`}
+        className="block"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div className="relative bg-white rounded-xl md:rounded-2xl overflow-hidden transition-shadow duration-300 hover:shadow-xl">
         <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
           <OptimizedImage
             src={currentImage}
@@ -180,5 +195,6 @@ export function ProductCard({ product, badge, badgeColor = "coral" }: ProductCar
         </div>
       </div>
     </Link>
+    </CardWrapper>
   )
 }

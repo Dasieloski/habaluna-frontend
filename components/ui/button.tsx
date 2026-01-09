@@ -1,8 +1,12 @@
-import * as React from 'react'
-import { Slot } from '@radix-ui/react-slot'
-import { cva, type VariantProps } from 'class-variance-authority'
+'use client';
 
-import { cn } from '@/lib/utils'
+import * as React from 'react';
+import { Slot } from '@radix-ui/react-slot';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { motion, type HTMLMotionProps } from 'framer-motion';
+
+import { cn } from '@/lib/utils';
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
@@ -34,27 +38,64 @@ const buttonVariants = cva(
       size: 'default',
     },
   },
-)
+);
 
+interface ButtonProps extends React.ComponentProps<'button'>, VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+  /**
+   * Si es false, desactiva las animaciones de microinteracción
+   * Por defecto: true
+   */
+  enableAnimations?: boolean;
+}
+
+/**
+ * Button component con microinteracciones profesionales
+ * 
+ * Microinteracciones incluidas:
+ * - Hover: ligero scale (1.02) y transición suave
+ * - Click: scale down (0.98) para feedback táctil
+ * - Active: opacidad reducida momentáneamente
+ * 
+ * Para desactivar animaciones: <Button enableAnimations={false} />
+ */
 function Button({
   className,
   variant,
   size,
   asChild = false,
+  enableAnimations = true,
   ...props
-}: React.ComponentProps<'button'> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-  }) {
-  const Comp = asChild ? Slot : 'button'
+}: ButtonProps) {
+  const Comp = asChild ? Slot : 'button';
+  const prefersReducedMotion = useReducedMotion();
+
+  // Si no hay animaciones, es asChild, o el usuario prefiere movimiento reducido
+  if (!enableAnimations || asChild || prefersReducedMotion) {
+    return (
+      <Comp
+        data-slot="button"
+        className={cn(buttonVariants({ variant, size, className }))}
+        {...props}
+      />
+    );
+  }
+
+  // Microinteracciones: hover y click sutil
+  const buttonMotionProps: HTMLMotionProps<'button'> = {
+    whileHover: { scale: 1.02 },
+    whileTap: { scale: 0.98 },
+    transition: { duration: 0.15, ease: 'easeOut' },
+  };
 
   return (
-    <Comp
+    <motion.button
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
+      {...buttonMotionProps}
+      {...(props as any)}
     />
-  )
+  );
 }
 
-export { Button, buttonVariants }
+export { Button, buttonVariants };

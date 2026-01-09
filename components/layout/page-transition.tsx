@@ -3,6 +3,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
 
 interface PageTransitionProps {
   children: ReactNode;
@@ -25,6 +27,7 @@ interface PageTransitionProps {
  */
 export function PageTransition({ children }: PageTransitionProps) {
   const pathname = usePathname();
+  const prefersReducedMotion = useReducedMotion();
 
   // Variantes de animación estilo SSGOI
   const pageVariants = {
@@ -49,6 +52,11 @@ export function PageTransition({ children }: PageTransitionProps) {
       },
     },
   };
+
+  // Si el usuario prefiere movimiento reducido, desactivar animaciones
+  if (prefersReducedMotion) {
+    return <div style={{ width: '100%', minHeight: '100%' }}>{children}</div>;
+  }
 
   return (
     <AnimatePresence mode="wait" initial={false}>

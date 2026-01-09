@@ -9,6 +9,11 @@ import { api, mapBackendProductToFrontend } from '@/lib/api';
 import { toNumber } from '@/lib/money';
 import { ProductFilters, SearchFilters } from '@/components/product/product-filters';
 import { OptimizedImage } from '@/components/ui/optimized-image';
+import { AnimatedList } from '@/components/ui/animated-list';
+import { ProductCard } from '@/components/product/product-card';
+import { ProductCardSkeleton } from '@/components/product/product-card-skeleton';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 
 type UIProduct = {
   id: string;
@@ -167,84 +172,88 @@ export default function ProductsClient() {
 
         {/* Loading */}
         {loading ? (
-          <div className="py-16 text-center text-sm text-gray-600">Cargando productos...</div>
+          <AnimatedList
+            staggerDelay={0.03}
+            enableAnimations={true}
+            animateOnViewport={false}
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
+          >
+            {Array.from({ length: 8 }).map((_, index) => (
+              <ProductCardSkeleton key={index} />
+            ))}
+          </AnimatedList>
         ) : pagedProducts.length === 0 ? (
-          <div className="py-16 text-center">
-            <p className="text-sm text-gray-600 mb-4">No se encontraron productos.</p>
-            <p className="text-xs text-gray-500">
-              Intenta ajustar los filtros o realizar una búsqueda diferente.
-            </p>
-          </div>
+          <EmptyState
+            icon={
+              <svg
+                className="w-16 h-16 text-gray-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            }
+            title="No se encontraron productos"
+            description="Intenta ajustar los filtros o realizar una búsqueda diferente."
+            className="py-16"
+          />
         ) : (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            <AnimatedList
+              staggerDelay={0.05}
+              enableAnimations={true}
+              animateOnViewport={true}
+              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
+            >
               {pagedProducts.map((p) => (
-                <Link
+                <ProductCard
                   key={p.id}
-                  href={`/products/${p.slug}`}
-                  className="group block bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-lg transition-shadow"
-                >
-                  <div className="aspect-square bg-gray-50 overflow-hidden relative">
-                    {p.images?.[0] ? (
-                      <OptimizedImage
-                        src={p.images[0]}
-                        alt={p.name}
-                        fill
-                        className="transition-transform duration-500 group-hover:scale-105"
-                        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                        objectFit="cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
-                        <div className="text-center">
-                          <svg className="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                          <p className="text-xs">Sin imagen</p>
-                        </div>
-                      </div>
-                    )}
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        toggleFavorite(p.id);
-                      }}
-                      className="absolute top-3 right-3 p-2 rounded-full bg-white/90 backdrop-blur-sm shadow-sm hover:bg-white transition-colors"
-                    >
-                      <HeartIcon className="w-4 h-4" filled={favorites.has(p.id)} />
-                    </button>
-                  </div>
-                  <div className="p-3">
-                    <h3 className="text-sm font-semibold text-foreground line-clamp-2">{p.name}</h3>
-                    <p className="mt-2 text-sm font-bold text-sky-700">
-                      ${(toNumber(p.variants?.[0]?.priceUSD ?? p.priceUSD) ?? 0).toFixed(2)}
-                    </p>
-                  </div>
-                </Link>
+                  product={{
+                    id: p.id,
+                    slug: p.slug,
+                    name: p.name,
+                    images: p.images,
+                    priceUSD: toNumber(p.variants?.[0]?.priceUSD ?? p.priceUSD) ?? undefined,
+                    comparePriceUSD: toNumber(p.variants?.[0]?.comparePriceUSD ?? p.comparePriceUSD) ?? undefined,
+                    variants: p.variants?.map((v: any) => ({
+                      id: v.id,
+                      name: v.name,
+                      priceUSD: v.priceUSD,
+                      comparePriceUSD: v.comparePriceUSD,
+                    })),
+                  }}
+                />
               ))}
-            </div>
+            </AnimatedList>
 
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-2 mt-10">
-                <button
-                  className="px-4 py-2 text-sm border rounded-lg disabled:opacity-50"
+                <Button
+                  variant="outline"
+                  size="sm"
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 >
                   Anterior
-                </button>
+                </Button>
                 <span className="text-sm text-gray-600">
                   Página {currentPage} de {totalPages}
                 </span>
-                <button
-                  className="px-4 py-2 text-sm border rounded-lg disabled:opacity-50"
+                <Button
+                  variant="outline"
+                  size="sm"
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 >
                   Siguiente
-                </button>
+                </Button>
               </div>
             )}
           </>

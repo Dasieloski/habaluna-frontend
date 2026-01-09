@@ -7,41 +7,109 @@ import { Minus, Plus, Trash2, ChevronDown, ChevronUp, Truck, Gift, ShoppingBag, 
 import { useCartStore } from "@/lib/store/cart-store"
 import { useAuthStore } from "@/lib/store/auth-store"
 import { useCartValidation } from "@/hooks/use-cart-validation"
-
-// Productos sugeridos
-const suggestedProducts = [
-  {
-    id: "s1",
-    name: "Aceite de Oliva Extra Virgen",
-    image: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=200&h=200&fit=crop",
-    price: 9.99,
-  },
-  {
-    id: "s2",
-    name: "Sal Marina Gourmet",
-    image: "https://images.unsplash.com/photo-1518110925495-5fe2fda0442c?w=200&h=200&fit=crop",
-    price: 9.99,
-  },
-  {
-    id: "s3",
-    name: "Especias Selección Premium",
-    image: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=200&h=200&fit=crop",
-    price: 9.99,
-  },
-]
+import { api, mapBackendProductToFrontend } from "@/lib/api"
+import { useToast } from "@/hooks/use-toast"
+import { OptimizedImage } from "@/components/ui/optimized-image"
 
 export default function CartPage() {
   const [showCoupon, setShowCoupon] = useState(false)
   const [couponCode, setCouponCode] = useState("")
+  const [suggestedProducts, setSuggestedProducts] = useState<any[]>([])
+  const [loadingSuggestions, setLoadingSuggestions] = useState(true)
   const { isAuthenticated } = useAuthStore()
-  const { items, subtotal, fetchCart, updateItemQuantity, removeItem } = useCartStore()
+  const { items, subtotal, fetchCart, updateItemQuantity, removeItem, addToCart } = useCartStore()
   const { validation, getItemErrorMessage, hasItemIssue, getItemAvailableStock } = useCartValidation()
+  const { toast } = useToast()
 
   useEffect(() => {
     if (isAuthenticated()) {
       fetchCart()
     }
   }, [fetchCart, isAuthenticated])
+
+  // Cargar productos sugeridos
+  useEffect(() => {
+    const loadSuggestedProducts = async () => {
+      try {
+        setLoadingSuggestions(true)
+        // Obtener productos destacados o productos relacionados
+        // Excluir productos que ya están en el carrito
+        const cartProductIds = new Set(items.map(item => item.product.id))
+        
+        // Intentar obtener productos destacados primero
+        const response = await api.getProducts({
+          page: 1,
+          limit: 12,
+          isFeatured: true,
+        })
+
+        let products = response.data || []
+        
+        // Si no hay suficientes productos destacados, obtener más productos
+        if (products.length < 4) {
+          const moreProducts = await api.getProducts({
+            page: 1,
+            limit: 20,
+          })
+          products = [...products, ...(moreProducts.data || [])]
+        }
+
+        // Filtrar productos que ya están en el carrito y mapear
+        const mapped = products
+          .map(mapBackendProductToFrontend)
+          .filter((p: any) => !cartProductIds.has(p.id))
+          .slice(0, 6) // Mostrar máximo 6 productos
+
+        setSuggestedProducts(mapped)
+      } catch (error) {
+        console.error('Error al cargar productos sugeridos:', error)
+        setSuggestedProducts([])
+      } finally {
+        setLoadingSuggestions(false)
+      }
+    }
+
+    if (items.length > 0) {
+      loadSuggestedProducts()
+    } else {
+      setSuggestedProducts([])
+      setLoadingSuggestions(false)
+    }
+  }, [items])
+
+  const handleAddSuggestedProduct = async (product: any) => {
+    try {
+      await addToCart({
+        product: {
+          id: product.id,
+          name: product.name,
+          slug: product.slug,
+          priceUSD: product.priceUSD ?? product.variants?.[0]?.priceUSD ?? null,
+          priceMNs: product.priceMNs ?? product.variants?.[0]?.priceMNs ?? null,
+          images: product.images || [],
+        },
+        productVariant: product.variants?.[0]?.id
+          ? {
+              id: product.variants[0].id,
+              name: product.variants[0].name || "Variante",
+              priceUSD: product.variants[0].priceUSD ?? null,
+              priceMNs: product.variants[0].priceMNs ?? null,
+            }
+          : null,
+        quantity: 1,
+      })
+      toast({
+        title: "Producto añadido",
+        description: `${product.name} se añadió al carrito`,
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.response?.data?.message || error?.message || "No se pudo añadir el producto",
+        variant: "destructive",
+      })
+    }
+  }
 
   const shippingThreshold = 25.03
   const shipping = subtotal >= 100 ? 0 : 11.99
@@ -238,35 +306,65 @@ export default function CartPage() {
               </div>
             )})}
 
-            {/* Sección Level up your gift */}
-            <div className="bg-white rounded-xl p-4 md:p-6">
-              <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Gift className="h-5 w-5 text-sky-500" />
-                Mejora tu pedido
-              </h3>
-              <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
-                {suggestedProducts.map((product) => (
-                  <div key={product.id} className="flex-shrink-0 w-32 md:w-40">
-                    <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-2">
-                      <Image
-                        src={product.image || "/placeholder.svg"}
-                        alt={product.name}
-                        width={160}
-                        height={160}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <h4 className="text-xs md:text-sm text-gray-700 mb-1 line-clamp-2">{product.name}</h4>
-                    <p className="text-sm font-bold text-gray-900 mb-2">
-                      ${product.price.toFixed(2)}
-                    </p>
-                    <button className="w-full bg-sky-500 hover:bg-sky-600 text-white text-xs py-2 px-3 rounded-full transition-colors">
-                      Añadir al carrito
-                    </button>
+            {/* Sección Mejora tu pedido */}
+            {suggestedProducts.length > 0 && (
+              <div className="bg-white rounded-xl p-4 md:p-6">
+                <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Gift className="h-5 w-5 text-sky-500" />
+                  Mejora tu pedido
+                </h3>
+                {loadingSuggestions ? (
+                  <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="flex-shrink-0 w-32 md:w-40 animate-pulse">
+                        <div className="aspect-square rounded-lg bg-gray-200 mb-2" />
+                        <div className="h-4 bg-gray-200 rounded mb-2" />
+                        <div className="h-4 bg-gray-200 rounded w-2/3 mb-2" />
+                        <div className="h-8 bg-gray-200 rounded" />
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
+                    {suggestedProducts.map((product) => {
+                      const price = Number(product.variants?.[0]?.priceUSD ?? product.priceUSD ?? 0)
+                      const image = product.images?.[0] || "/placeholder.svg"
+                      return (
+                        <div key={product.id} className="flex-shrink-0 w-32 md:w-40">
+                          <Link href={`/products/${product.slug}`} className="block mb-2">
+                            <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 relative">
+                              <OptimizedImage
+                                src={image}
+                                alt={product.name}
+                                fill
+                                className="object-cover"
+                                sizes="160px"
+                                objectFit="cover"
+                                loading="lazy"
+                              />
+                            </div>
+                          </Link>
+                          <Link href={`/products/${product.slug}`}>
+                            <h4 className="text-xs md:text-sm text-gray-700 mb-1 line-clamp-2 hover:text-sky-600 transition-colors">
+                              {product.name}
+                            </h4>
+                          </Link>
+                          <p className="text-sm font-bold text-gray-900 mb-2">
+                            ${price.toFixed(2)}
+                          </p>
+                          <button
+                            onClick={() => handleAddSuggestedProduct(product)}
+                            className="w-full bg-sky-500 hover:bg-sky-600 text-white text-xs py-2 px-3 rounded-full transition-colors"
+                          >
+                            Añadir al carrito
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
-            </div>
+            )}
           </div>
 
           {/* Panel Resumen */}
@@ -287,7 +385,7 @@ export default function CartPage() {
 
               <div className="border-t border-gray-200 pt-4 mb-4">
                 <div className="flex justify-between text-base md:text-lg font-bold">
-                  <span>Total. IVA incluido.</span>
+                  <span>Total</span>
                   <span>${total.toFixed(2)}</span>
                 </div>
               </div>

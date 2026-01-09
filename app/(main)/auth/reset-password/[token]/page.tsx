@@ -7,13 +7,11 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { api } from "@/lib/api"
+import { passwordSchema, validatePasswordStrength, getPasswordStrengthLabel } from "@/lib/validations/password"
 
 const schema = z
   .object({
-    newPassword: z
-      .string()
-      .min(8, "La contraseña debe tener al menos 8 caracteres")
-      .regex(/^(?=.*[A-Za-z])(?=.*\d).{8,}$/, "Debe incluir al menos 1 letra y 1 número"),
+    newPassword: passwordSchema,
     confirmPassword: z.string().min(8, "Confirma tu contraseña"),
   })
   .refine((d) => d.newPassword === d.confirmPassword, {
@@ -32,8 +30,13 @@ export default function ResetPasswordPage({ params }: { params: { token: string 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<Form>({ resolver: zodResolver(schema) })
+
+  const newPassword = watch("newPassword") || ""
+  const passwordStrength = newPassword ? validatePasswordStrength(newPassword) : { score: 0, feedback: [] }
+  const strengthLabel = getPasswordStrengthLabel(passwordStrength.score)
 
   const onSubmit = async (data: Form) => {
     try {
@@ -91,6 +94,37 @@ export default function ResetPasswordPage({ params }: { params: { token: string 
                   {...register("newPassword")}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-sky-400 transition-all"
                 />
+                
+                {/* Indicador de fortaleza de contraseña */}
+                {newPassword && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full transition-all duration-300 ${strengthLabel.bgColor}`}
+                          style={{ width: `${(passwordStrength.score / 4) * 100}%` }}
+                        />
+                      </div>
+                      <span className={`text-xs font-medium ${strengthLabel.color}`}>
+                        {strengthLabel.label}
+                      </span>
+                    </div>
+                    {passwordStrength.feedback.length > 0 && (
+                      <ul className="text-xs text-muted-foreground space-y-1">
+                        {passwordStrength.feedback.map((item, idx) => (
+                          <li key={idx} className="flex items-start gap-1">
+                            <span className="text-red-500">•</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+                
+                <p className="text-xs text-muted-foreground">
+                  La contraseña debe tener mínimo 8 caracteres e incluir mayúsculas, minúsculas, números y símbolos
+                </p>
                 {errors.newPassword && <p className="text-sm text-red-500">{errors.newPassword.message}</p>}
               </div>
 

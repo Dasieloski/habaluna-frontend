@@ -9,12 +9,13 @@ import * as z from "zod"
 import { api } from "@/lib/api"
 import { useAuthStore } from "@/lib/store/auth-store"
 import { Eye, EyeOff } from "lucide-react"
+import { passwordSchema, validatePasswordStrength, getPasswordStrengthLabel } from "@/lib/validations/password"
 
 const registerSchema = z
   .object({
     email: z.string().email("Email inválido"),
-    password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
-    confirmPassword: z.string().min(6, "Confirma tu contraseña"),
+    password: passwordSchema,
+    confirmPassword: z.string().min(8, "Confirma tu contraseña"),
     firstName: z.string().min(1, "El nombre es requerido"),
     lastName: z.string().min(1, "Los apellidos son requeridos"),
     treatment: z.enum(["senor", "senora", "empresa"]).optional(),
@@ -37,6 +38,7 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -45,6 +47,10 @@ export default function RegisterPage() {
       newsletter: false,
     },
   })
+
+  const password = watch("password") || ""
+  const passwordStrength = password ? validatePasswordStrength(password) : { score: 0, feedback: [] }
+  const strengthLabel = getPasswordStrengthLabel(passwordStrength.score)
 
   const onSubmit = async (data: RegisterForm) => {
     try {
@@ -196,9 +202,36 @@ export default function RegisterPage() {
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>
+                  
+                  {/* Indicador de fortaleza de contraseña */}
+                  {password && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-300 ${strengthLabel.bgColor}`}
+                            style={{ width: `${(passwordStrength.score / 4) * 100}%` }}
+                          />
+                        </div>
+                        <span className={`text-xs font-medium ${strengthLabel.color}`}>
+                          {strengthLabel.label}
+                        </span>
+                      </div>
+                      {passwordStrength.feedback.length > 0 && (
+                        <ul className="text-xs text-muted-foreground space-y-1">
+                          {passwordStrength.feedback.map((item, idx) => (
+                            <li key={idx} className="flex items-start gap-1">
+                              <span className="text-red-500">•</span>
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+                  
                   <p className="text-xs text-muted-foreground">
-                    * Para una contraseña segura deberías tener como mínimo 2 tipos de caracteres diferentes
-                    (Mayúsculas, Minúsculas, números y caracteres especiales)
+                    * La contraseña debe tener mínimo 8 caracteres e incluir mayúsculas, minúsculas, números y símbolos
                   </p>
                   {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
                 </div>

@@ -7,6 +7,7 @@ import { BenefitsBar } from "@/components/sections/benefits-bar"
 
 // Evita que Vercel intente prerenderizar esta página en build (puede colgarse si el backend tarda/no responde).
 export const dynamic = "force-dynamic"
+export const revalidate = 0 // No cachear, siempre obtener datos frescos del backend
 
 async function getBanners() {
   try {
@@ -36,34 +37,28 @@ async function getBanners() {
 
 async function getAllProducts() {
   try {
-    const params = new URLSearchParams({
-      limit: "100",
-      page: "1",
+    // Usar la función helper del API que ya maneja correctamente los parámetros
+    const productsResponse = await api.getProducts({
+      limit: 100,
+      page: 1,
     })
-    const response = await api.get(`/products?${params.toString()}`)
-    const productsResponse = response.data as any
-    const rawProducts = Array.isArray(productsResponse?.data)
-      ? productsResponse.data
-      : Array.isArray(productsResponse?.data?.data)
-        ? productsResponse.data.data
-        : []
-    const meta = productsResponse?.meta ?? productsResponse?.data?.meta
     return {
-      ...productsResponse,
-      data: rawProducts.map(mapBackendProductToFrontend),
-      ...(meta ? { meta } : {}),
+      data: productsResponse.data.map(mapBackendProductToFrontend),
+      meta: productsResponse.meta,
     }
   } catch (error) {
     console.error("Error fetching products:", error)
-    return { data: [], meta: { total: 0 } }
+    return { data: [], meta: { total: 0, page: 1, limit: 100, totalPages: 0 } }
   }
 }
 
 async function getCategories() {
   try {
-    const response = await api.get("/categories")
-    return response.data || []
+    // Usar la función helper del API
+    const categories = await api.getCategories()
+    return categories || []
   } catch (error) {
+    console.error("Error fetching categories:", error)
     return []
   }
 }
@@ -87,43 +82,18 @@ export default async function Home() {
   const circleCategories = homeCategories.slice(0, 12)
   const bannerCategories = homeCategories.slice(4, 12).length > 0 ? homeCategories.slice(4, 12) : homeCategories
 
-  const sampleProducts =
-    products.length > 0
-      ? products
-      : Array.from({ length: 12 }, (_, i) => {
-          const productNames = [
-            "Spaghetti Premium 500g",
-            "Coditos Artesanales",
-            "Pasta de Tomate Casera",
-            "Cerveza Artesanal IPA",
-            "Cemento Portland 50kg",
-            "Arena Fina Construcción",
-            "Cigarros Habanos",
-            "Macarrones Integrales",
-            "Cerveza Lager Premium",
-            "Mortero Especial",
-            "Tabaco Selección",
-            "Lasaña Fresca",
-          ]
-          return {
-            id: `sample-${i}`,
-            slug: `product-${i}`,
-            name: productNames[i] || `Producto ${i + 1}`,
-            images: [`/placeholder.svg?height=300&width=300&query=${productNames[i] || `product ${i + 1}`}`],
-            priceUSD: 9.99 + i * 3,
-            comparePriceUSD: i % 3 === 0 ? 14.99 + i * 3 : undefined,
-          }
-        })
+  // Usar solo productos del backend, sin fallback estático
+  const allProducts = products
 
   // Ofertas del día: solo productos con descuento (comparePrice > price)
-  const offersOfDay = sampleProducts.filter((p: any) => {
+  const offersOfDay = allProducts.filter((p: any) => {
     const price = typeof p.priceUSD === "number" ? p.priceUSD : 0
     const compare = typeof p.comparePriceUSD === "number" ? p.comparePriceUSD : undefined
     return compare !== undefined && compare > price
   })
 
   // Productos destacados: solo productos marcados como isFeatured (desde admin)
-  const featuredProducts = sampleProducts.filter((p: any) => !!p?.isFeatured)
+  const featuredProducts = allProducts.filter((p: any) => !!p?.isFeatured)
 
   return (
     <div className="min-h-screen bg-background">
@@ -142,12 +112,12 @@ export default async function Home() {
       <CategoryGrid categories={displayCategories} variant="cards" />
 
       {/* Top Sales */}
-      <TopSales products={sampleProducts.slice(0, 5)} />
+      <TopSales products={allProducts.slice(0, 5)} />
 
       {/* More Products */}
       <ProductCarousel
         title="Productos Destacados"
-        products={(featuredProducts.length > 0 ? featuredProducts : sampleProducts).slice(0, 8)}
+        products={(featuredProducts.length > 0 ? featuredProducts : allProducts).slice(0, 8)}
         viewAllLink="/products?filter=top"
         badgeType="personalized"
       />

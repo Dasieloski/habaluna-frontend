@@ -188,65 +188,71 @@ export function ProductClient({
       </div>
 
       {/* Product Section */}
-      <div className="container mx-auto px-4 pb-8 md:pb-16">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-12">
+      <section className="container mx-auto px-4 pb-8 md:pb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 lg:gap-12">
           {/* Left - Gallery */}
-          <div className="flex flex-col-reverse md:flex-row gap-3 md:gap-4">
-            {/* Thumbnails */}
-            <div className="flex md:flex-col gap-2 md:gap-3 overflow-x-auto md:overflow-visible pb-2 md:pb-0">
-              {images.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedImage(idx)}
-                  className={`shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg md:rounded-xl overflow-hidden border-2 transition-all ${
-                    selectedImage === idx
-                      ? "border-sky-500 ring-2 ring-sky-200"
-                      : "border-transparent hover:border-gray-200"
-                  }`}
-                >
-                  <OptimizedImage
-                    src={img || "/placeholder.svg"}
-                    alt={`Vista ${idx + 1}`}
-                    fill
-                    className="object-cover"
-                    sizes="80px"
-                    objectFit="cover"
-                    loading="lazy"
-                  />
-                </button>
-              ))}
-            </div>
+          <div className="w-full max-w-full">
+            <div className="flex flex-col-reverse md:flex-row gap-3 md:gap-4">
+              {/* Thumbnails */}
+              <div className="flex md:flex-col gap-2 md:gap-3 overflow-x-auto md:overflow-visible pb-2 md:pb-0 shrink-0">
+                {images.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedImage(idx)}
+                    className={`shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg md:rounded-xl overflow-hidden border-2 transition-all ${
+                      selectedImage === idx
+                        ? "border-sky-500 ring-2 ring-sky-200"
+                        : "border-transparent hover:border-gray-200"
+                    }`}
+                  >
+                    <OptimizedImage
+                      src={img || "/placeholder.svg"}
+                      alt={`Vista ${idx + 1}`}
+                      fill
+                      className="object-cover"
+                      sizes="80px"
+                      objectFit="cover"
+                      loading="lazy"
+                    />
+                  </button>
+                ))}
+              </div>
 
-            {/* Main Image */}
-            <div className="flex-1 relative bg-linear-to-br from-gray-50 to-gray-100 rounded-xl md:rounded-2xl overflow-hidden aspect-square">
-              <OptimizedImage
-                src={images[selectedImage] || "/placeholder.svg"}
-                alt={product?.name || "Producto"}
-                fill
-                className="p-4 md:p-8"
-                sizes="(max-width: 768px) 100vw, 50vw"
-                objectFit="contain"
-                loading="eager"
-                priority
-              />
-              {/* Navigation arrows */}
-              <button
-                onClick={() => setSelectedImage((prev) => (prev > 0 ? prev - 1 : images.length - 1))}
-                className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-all"
-              >
-                <ChevronLeftIcon className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setSelectedImage((prev) => (prev < images.length - 1 ? prev + 1 : 0))}
-                className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-all"
-              >
-                <ChevronRightIcon className="w-5 h-5" />
-              </button>
+              {/* Main Image */}
+              <div className="relative flex-1 min-w-0 aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl md:rounded-2xl overflow-hidden">
+                <OptimizedImage
+                  src={images[selectedImage] || "/placeholder.svg"}
+                  alt={product?.name || "Producto"}
+                  fill
+                  className="p-4 md:p-8"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  objectFit="contain"
+                  loading="eager"
+                  priority
+                />
+                {/* Navigation arrows */}
+                {images.length > 1 && (
+                  <>
+                    <button
+                      onClick={() => setSelectedImage((prev) => (prev > 0 ? prev - 1 : images.length - 1))}
+                      className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-all z-10"
+                    >
+                      <ChevronLeftIcon className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => setSelectedImage((prev) => (prev < images.length - 1 ? prev + 1 : 0))}
+                      className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-all z-10"
+                    >
+                      <ChevronRightIcon className="w-5 h-5" />
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Right - Product Info */}
-          <div className="flex flex-col">
+          <div className="w-full flex flex-col relative z-10 min-w-0">
             {/* Category */}
             {product?.category?.name && (
               <span className="text-xs md:text-sm text-sky-600 font-medium mb-1 md:mb-2">{product.category.name}</span>
@@ -508,7 +514,7 @@ export function ProductClient({
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Related Products */}
       {relatedProducts.length > 0 && (

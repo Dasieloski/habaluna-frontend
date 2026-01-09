@@ -555,21 +555,20 @@ export function ProductClient({
             </div>
           </div>
         </section>
-          )}
+      )}
 
       {/* Reviews Section */}
       <section className="py-10 md:py-16 bg-sky-50/50">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
-
             <ProductReviews
               productId={product?.id}
               productName={product?.name || "Producto"}
               initialReviews={initialReviews}
               initialReviewsMeta={initialReviewsMeta}
             />
-      </div>
-    </div>
+          </div>
+        </div>
       </section>
     </>
   )

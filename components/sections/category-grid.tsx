@@ -34,6 +34,7 @@ const DEFAULT_CIRCLE_IMAGES = [
 
 export function CategoryGrid({ categories, variant = "cards", title }: CategoryGridProps) {
   const [isVisible, setIsVisible] = useState(false)
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set())
   const sectionRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
@@ -75,12 +76,20 @@ export function CategoryGrid({ categories, variant = "cards", title }: CategoryG
                 style={{ transitionDelay: `${index * 0.1}s` }}
               >
                 <div className="w-16 h-16 md:w-28 md:h-28 rounded-full overflow-hidden bg-gradient-to-br from-sky-100 to-blue-100 mb-2 md:mb-4 ring-2 md:ring-4 ring-transparent group-hover:ring-sky-300 transition-all duration-300 group-hover:scale-110 shadow-lg">
-                  <img
-                    src={category.image || DEFAULT_CIRCLE_IMAGES[index % DEFAULT_CIRCLE_IMAGES.length]}
-                    alt={category.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    crossOrigin="anonymous"
-                  />
+                  {!imageErrors.has(category.id) ? (
+                    <img
+                      src={category.image || DEFAULT_CIRCLE_IMAGES[index % DEFAULT_CIRCLE_IMAGES.length]}
+                      alt={category.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      loading="lazy"
+                      decoding="async"
+                      onError={() => setImageErrors(prev => new Set(prev).add(category.id))}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-sky-100 to-blue-100">
+                      <span className="text-xs font-semibold text-sky-600">{category.name.charAt(0)}</span>
+                    </div>
+                  )}
                 </div>
                 <span className="text-xs md:text-sm font-semibold text-foreground text-center group-hover:text-sky-600 transition-colors line-clamp-1">
                   {category.name}
@@ -109,12 +118,20 @@ export function CategoryGrid({ categories, variant = "cards", title }: CategoryG
                   transitionDelay: `${index * 0.1}s`,
                 }}
               >
-                <img
-                  src={category.image || DEFAULT_CATEGORY_IMAGES[index % DEFAULT_CATEGORY_IMAGES.length]}
-                  alt={category.name}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  crossOrigin="anonymous"
-                />
+                {!imageErrors.has(category.id) ? (
+                  <img
+                    src={category.image || DEFAULT_CATEGORY_IMAGES[index % DEFAULT_CATEGORY_IMAGES.length]}
+                    alt={category.name}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    loading="lazy"
+                    decoding="async"
+                    onError={() => setImageErrors(prev => new Set(prev).add(category.id))}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-sky-100 to-blue-100">
+                    <span className="text-2xl font-bold text-sky-600">{category.name.charAt(0)}</span>
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                 <div className="absolute bottom-3 md:bottom-5 left-3 md:left-5 right-3 md:right-5">
                   <h3 className="text-white text-sm md:text-xl font-bold mb-0.5 md:mb-1">{category.name}</h3>
@@ -142,12 +159,20 @@ export function CategoryGrid({ categories, variant = "cards", title }: CategoryG
               className={`group relative aspect-[4/5] md:aspect-square rounded-xl md:rounded-2xl overflow-hidden bg-gradient-to-br from-sky-100 to-blue-100 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
               style={{ transitionDelay: `${index * 0.1}s` }}
             >
-              <img
-                src={category.image || DEFAULT_CATEGORY_IMAGES[index % DEFAULT_CATEGORY_IMAGES.length]}
-                alt={category.name}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                crossOrigin="anonymous"
-              />
+              {!imageErrors.has(category.id) ? (
+                <img
+                  src={category.image || DEFAULT_CATEGORY_IMAGES[index % DEFAULT_CATEGORY_IMAGES.length]}
+                  alt={category.name}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  loading="lazy"
+                  decoding="async"
+                  onError={() => setImageErrors(prev => new Set(prev).add(category.id))}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-sky-100 to-blue-100">
+                  <span className="text-2xl font-bold text-sky-600">{category.name.charAt(0)}</span>
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
               <div className="absolute bottom-3 md:bottom-5 left-3 md:left-5 right-3 md:right-5">
                 <h3 className="text-white text-base md:text-2xl font-bold mb-0.5 md:mb-1">{category.name}</h3>

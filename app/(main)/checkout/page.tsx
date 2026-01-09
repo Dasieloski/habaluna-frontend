@@ -282,7 +282,7 @@ export default function CheckoutPage() {
                     type="submit" 
                     className="w-full" 
                     size="lg" 
-                    disabled={loading || validationLoading || (validation && hasIssues)}
+                    disabled={loading || validationLoading || Boolean(validation && hasIssues)}
                   >
                     {loading ? 'Creando pedido...' : validationLoading ? 'Validando...' : (validation && hasIssues) ? 'Resuelve los problemas de stock' : 'Continuar al Pago'}
                   </Button>

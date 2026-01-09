@@ -40,6 +40,7 @@ export function ProductClient({ product, relatedProducts = [], reviews = [] }: P
   const [isFavorite, setIsFavorite] = useState(false)
   const [openAccordion, setOpenAccordion] = useState<string | null>(null)
   const [selectedVariantId, setSelectedVariantId] = useState<string>(() => product?.variants?.[0]?.id || "")
+  const [imageErrors, setImageErrors] = useState<Set<number>>(new Set())
   const relatedScrollRef = useRef<HTMLDivElement>(null)
   const isCombo = Boolean(product?.isCombo)
 
@@ -240,24 +241,47 @@ export function ProductClient({ product, relatedProducts = [], reviews = [] }: P
                       : "border-transparent hover:border-gray-200"
                   }`}
                 >
-                  <img
-                    src={img || "/placeholder.svg"}
-                    alt={`Vista ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                    crossOrigin="anonymous"
-                  />
+                  {!imageErrors.has(idx) ? (
+                    <img
+                      src={img || "/placeholder.svg"}
+                      alt={`Vista ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                      onError={() => setImageErrors(prev => new Set(prev).add(idx))}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 text-xs">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  )}
                 </button>
               ))}
             </div>
 
             {/* Main Image */}
             <div className="flex-1 relative bg-linear-to-br from-gray-50 to-gray-100 rounded-xl md:rounded-2xl overflow-hidden aspect-square">
-              <img
-                src={images[selectedImage] || "/placeholder.svg"}
-                alt={product?.name}
-                className="w-full h-full object-contain p-4 md:p-8"
-                crossOrigin="anonymous"
-              />
+              {!imageErrors.has(selectedImage) ? (
+                <img
+                  src={images[selectedImage] || "/placeholder.svg"}
+                  alt={product?.name}
+                  className="w-full h-full object-contain p-4 md:p-8"
+                  loading="eager"
+                  decoding="async"
+                  onError={() => setImageErrors(prev => new Set(prev).add(selectedImage))}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                  <div className="text-center">
+                    <svg className="w-16 h-16 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p className="text-sm text-gray-400">Imagen no disponible</p>
+                  </div>
+                </div>
+              )}
               {/* Navigation arrows */}
               <button
                 onClick={() => setSelectedImage((prev) => (prev > 0 ? prev - 1 : images.length - 1))}
@@ -329,7 +353,8 @@ export function ProductClient({ product, relatedProducts = [], reviews = [] }: P
                             src={item.image || "/placeholder.svg"}
                             alt={item.name}
                             className="w-full h-full object-cover"
-                            crossOrigin="anonymous"
+                            loading="lazy"
+                            decoding="async"
                           />
                         </div>
                         <div className="min-w-0 flex-1">

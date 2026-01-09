@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
-import { useReducedMotion } from '@/hooks/use-reduced-motion';
 
 interface PageTransitionProps {
   children: ReactNode;

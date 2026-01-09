@@ -35,7 +35,7 @@ export default function AdminCombosPage() {
     setError("")
     setLoading(true)
     try {
-      const res = await api.getAdminProducts({ page: 1, limit: 200, ...(search.trim() ? { search: search.trim() } : {}), isCombo: true })
+      const res = await api.getAdminProducts({ page: 1, limit: 100, ...(search.trim() ? { search: search.trim() } : {}), isCombo: true })
       // Doble filtro por seguridad (si el backend ignora el query param, aquí no se cuelan productos normales)
       setItems((res.data || []).filter((p: any) => !!p?.isCombo))
     } catch (e: any) {

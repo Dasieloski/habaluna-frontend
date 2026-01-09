@@ -365,7 +365,11 @@ export const api = {
   }): Promise<ProductsResponse> => {
     const queryParams = new URLSearchParams()
     if (params?.page) queryParams.append('page', params.page.toString())
-    if (params?.limit) queryParams.append('limit', params.limit.toString())
+    if (params?.limit) {
+      // Asegurar que el límite no exceda 100 (máximo permitido por el backend)
+      const limit = Math.min(params.limit, 100)
+      queryParams.append('limit', limit.toString())
+    }
     if (params?.categoryId) queryParams.append('categoryId', params.categoryId)
     if (params?.search) queryParams.append('search', params.search)
     if (params?.isFeatured !== undefined) queryParams.append('isFeatured', params.isFeatured.toString())

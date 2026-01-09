@@ -92,7 +92,7 @@ export default function ProductsPage() {
       
       // Construir parámetros de filtrado
       const params: any = {
-        limit: 200, // Cargar muchos productos
+        limit: 100, // Cargar muchos productos (máximo permitido por el backend)
       }
       
       // Agregar búsqueda si existe

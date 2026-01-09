@@ -259,8 +259,8 @@ export default function AdminBannersPage() {
       setIsLoadingLinkData(true)
       try {
         const [combosRes, productsRes] = await Promise.all([
-          api.getProducts({ page: 1, limit: 200, isCombo: true }),
-          api.getProducts({ page: 1, limit: 200, isCombo: false }),
+          api.getProducts({ page: 1, limit: 100, isCombo: true }),
+          api.getProducts({ page: 1, limit: 100, isCombo: false }),
         ])
         if (cancelled) return
         setComboOptions((combosRes.data || []).map((p: any) => ({ id: p.id, name: p.name, slug: p.slug })))

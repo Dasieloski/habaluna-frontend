@@ -67,7 +67,7 @@ export default function AdminReviewsPage() {
     try {
       const res = await api.getAdminReviews({
         page: 1,
-        limit: 200,
+        limit: 100,
         ...(searchQuery.trim() ? { search: searchQuery.trim() } : {}),
         ...(onlyApproved === null ? {} : { isApproved: onlyApproved }),
       })

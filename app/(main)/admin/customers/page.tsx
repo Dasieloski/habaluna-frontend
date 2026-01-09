@@ -66,7 +66,7 @@ function CustomersContent() {
     setError("")
     setIsLoading(true)
     try {
-      const res = await api.getAdminCustomers({ page: 1, limit: 200 })
+      const res = await api.getAdminCustomers({ page: 1, limit: 100 })
       setCustomers(res?.data || [])
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || "No se pudieron cargar los clientes.")

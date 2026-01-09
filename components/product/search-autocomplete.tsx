@@ -6,7 +6,7 @@ import { Search, X, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { useAuthStore } from '@/store/auth-store';
+import { useAuthStore } from '@/lib/store/auth-store';
 
 interface SearchAutocompleteProps {
   value: string;

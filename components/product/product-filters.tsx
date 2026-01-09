@@ -176,14 +176,14 @@ export function ProductFilters({ categories = [] }: ProductFiltersProps) {
             <div>
               <Label htmlFor="category">Categoría</Label>
               <Select
-                value={searchParams.get('categoryId') || ''}
-                onValueChange={(value) => updateFilter('categoryId', value || null)}
+                value={searchParams.get('categoryId') || 'all'}
+                onValueChange={(value) => updateFilter('categoryId', value === 'all' ? null : value)}
               >
                 <SelectTrigger id="category">
                   <SelectValue placeholder="Todas las categorías" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas las categorías</SelectItem>
+                  <SelectItem value="all">Todas las categorías</SelectItem>
                   {categories.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.name}

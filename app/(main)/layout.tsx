@@ -6,5 +6,6 @@ export default function MainLayout({
 }: {
   children: React.ReactNode
 }) {
+  // PageTransition ahora está dentro de ConditionalLayout para evitar doble wrapping
   return <ConditionalLayout>{children}</ConditionalLayout>
 }

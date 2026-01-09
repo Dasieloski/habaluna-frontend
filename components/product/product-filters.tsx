@@ -36,10 +36,20 @@ export function ProductFilters({ categories = [] }: ProductFiltersProps) {
   const [searchTerm, setSearchTerm] = useState(initialSearch);
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
 
-  // Sincronizar searchTerm con la URL cuando cambia (pero no por nuestro propio cambio)
+  // Sincronizar searchTerm con la URL cuando cambia externamente (no cuando estamos escribiendo)
+  // IMPORTANTE: El navbar tiene prioridad, así que solo sincronizamos si NO viene del navbar
   useEffect(() => {
     const urlSearch = searchParams.get('search') || '';
-    if (urlSearch !== searchTerm && urlSearch !== debouncedSearch) {
+    // Solo sincronizar si el cambio viene de fuera y NO estamos escribiendo en el buscador de productos
+    const isProductInputFocused = document.activeElement?.closest('[data-product-search]');
+    const isNavbarInputFocused = document.activeElement?.closest('[data-navbar-search]');
+    
+    // Si el navbar está enfocado, no sincronizar (el navbar tiene prioridad)
+    if (isNavbarInputFocused) {
+      return;
+    }
+    
+    if (urlSearch !== searchTerm && urlSearch !== debouncedSearch && !isProductInputFocused) {
       setSearchTerm(urlSearch);
       setDebouncedSearch(urlSearch);
     }
@@ -106,11 +116,13 @@ export function ProductFilters({ categories = [] }: ProductFiltersProps) {
       {/* Barra de búsqueda y filtros principales */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         {/* Búsqueda con autocompletado */}
-        <SearchAutocomplete
-          value={searchTerm}
-          onChange={setSearchTerm}
-          placeholder="Buscar productos..."
-        />
+        <div data-product-search="true">
+          <SearchAutocomplete
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Buscar productos..."
+          />
+        </div>
 
         {/* Botón de filtros avanzados */}
         <Button

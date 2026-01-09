@@ -5,12 +5,14 @@ import { Suspense } from "react"
 import { usePathname } from "next/navigation"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
+import { PageTransition } from "@/components/layout/page-transition"
 
 export function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isAdminRoute = pathname?.startsWith("/admin")
 
   if (isAdminRoute) {
+    // Rutas de admin sin transiciones para mantener la velocidad
     return <>{children}</>
   }
 
@@ -19,7 +21,10 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
       <Suspense fallback={null}>
         <Header />
       </Suspense>
-      <main>{children}</main>
+      <main>
+        {/* PageTransition dentro del main para aplicar transiciones a las páginas */}
+        <PageTransition>{children}</PageTransition>
+      </main>
       <Footer />
     </>
   )

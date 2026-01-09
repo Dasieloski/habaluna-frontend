@@ -69,17 +69,18 @@ export function SearchAutocomplete({
     const loadSuggestions = async () => {
       setLoading(true);
       try {
-        // Primero intentar obtener sugerencias del historial
+        // Primero intentar obtener sugerencias del historial (silenciosamente)
         try {
           const historySuggestions = await api.getSearchSuggestions(value, 3);
-          if (historySuggestions.length > 0) {
+          if (historySuggestions && historySuggestions.length > 0) {
             setSuggestions(historySuggestions);
             setShowSuggestions(true);
             setLoading(false);
             return;
           }
-        } catch {
-          // Continuar con búsqueda de productos si falla
+        } catch (error) {
+          // Silenciar errores de sugerencias del historial y continuar con búsqueda de productos
+          console.debug('Error obteniendo sugerencias del historial:', error);
         }
 
         // Buscar productos con el término de búsqueda
@@ -125,10 +126,14 @@ export function SearchAutocomplete({
     onChange(suggestion);
     setShowSuggestions(false);
     if (onSelect) {
+      // Si hay callback onSelect (navbar), usarlo y no navegar automáticamente
+      // El navbar maneja la navegación con router.push en handleNavbarSearch
       onSelect(suggestion);
+    } else {
+      // Para product-filters, solo actualizar el estado
+      // El debouncedSearch en ProductFilters manejará la actualización de URL
+      // No navegamos aquí para mantener la independencia
     }
-    // Opcional: redirigir a búsqueda
-    router.push(`/products?search=${encodeURIComponent(suggestion)}`);
   };
 
   const handleClear = () => {
@@ -138,10 +143,20 @@ export function SearchAutocomplete({
     inputRef.current?.focus();
   };
 
+  // Detectar si se usa en navbar (tiene onSelect) o en product-filters
+  const isNavbar = !!onSelect;
+  
   return (
-    <div ref={containerRef} className={cn('relative flex-1', className)}>
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+    <div 
+      ref={containerRef} 
+      className={cn('relative', isNavbar ? 'flex-1' : 'flex-1', className)}
+      data-navbar-search={isNavbar ? 'true' : undefined}
+    >
+      <div className="relative w-full group">
+        <Search className={cn(
+          "absolute top-1/2 transform -translate-y-1/2 text-muted-foreground group-focus-within:text-sky-500 transition-colors",
+          isNavbar ? "left-4 w-5 h-5" : "left-3 w-4 h-4 text-gray-400"
+        )} />
         <Input
           ref={inputRef}
           type="text"
@@ -156,7 +171,18 @@ export function SearchAutocomplete({
               setShowSuggestions(true);
             }
           }}
-          className="pl-10 pr-10"
+          onKeyDown={(e) => {
+            // No hacer nada con Enter - solo permitir navegación al seleccionar sugerencias
+            if (e.key === 'Escape') {
+              setShowSuggestions(false);
+              inputRef.current?.blur();
+            }
+          }}
+          className={cn(
+            isNavbar 
+              ? "pl-12 pr-10 h-12 bg-secondary/50 border-0 rounded-2xl focus:ring-2 focus:ring-sky-300 transition-all duration-300 focus:bg-white"
+              : "pl-10 pr-10"
+          )}
         />
         {value && (
           <button
@@ -216,7 +242,13 @@ export function SearchAutocomplete({
                   <button
                     type="button"
                     onClick={() => {
-                      router.push(`/products?search=${encodeURIComponent(value)}`);
+                      if (onSelect) {
+                        // Navbar: ejecutar callback que maneja la navegación
+                        onSelect(value);
+                      } else {
+                        // Product-filters: actualizar el estado, el debounce manejará la URL
+                        onChange(value);
+                      }
                       setShowSuggestions(false);
                     }}
                     className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm font-medium text-sky-600 border-t border-gray-200"

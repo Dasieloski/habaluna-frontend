@@ -8,6 +8,7 @@ import { useAuthStore } from "@/lib/store/auth-store"
 import { useCartStore } from "@/lib/store/cart-store"
 import { useWishlistStore } from "@/lib/store/wishlist-store"
 import { api } from "@/lib/api"
+import { SearchAutocomplete } from "@/components/product/search-autocomplete"
 import {
   SearchIcon,
   UserIcon,
@@ -144,38 +145,36 @@ export function Header() {
     return () => window.removeEventListener("scroll", onScroll)
   }, [mobileMenuOpen, userMenuOpen])
 
-  // Búsqueda "en vivo" (debounce) actualizando query param `search`
+  // Función para manejar la búsqueda del navbar (se ejecuta al seleccionar sugerencia)
+  const handleNavbarSearch = (searchValue: string) => {
+    const value = searchValue.trim()
+    if (!value) return
+
+    // Cerrar menús móviles
+    setSearchOpen(false)
+    setMobileMenuOpen(false)
+
+    // Navegar a /products con el término de búsqueda - siempre tiene prioridad
+    router.push(`/products?search=${encodeURIComponent(value)}`)
+  }
+
+  // Sincronizar searchQuery con la URL solo cuando estamos en /products y la URL cambia externamente
+  // PERO solo si NO viene del navbar (para evitar conflictos)
   useEffect(() => {
-    const value = searchQuery.trim()
-    const t = setTimeout(() => {
-      // No tocar mientras el usuario navega menús
-      if (mobileMenuOpen) return
-
-      // SOLO en el listado /products (no en /products/[slug]) mantener params y setear search
-      if ((pathname || "") === "/products") {
-        const current = searchParams?.get("search") || ""
-        // Si no cambia nada, no hacer replace (evita loops / "recargando")
-        if (!value && !current) return
-        if (value && current === value) return
-
-        const next = new URLSearchParams(searchParams?.toString() || "")
-        if (value) next.set("search", value)
-        else next.delete("search")
-        const qs = next.toString()
-        router.replace(`/products${qs ? `?${qs}` : ""}`)
-        return
+    // Solo sincronizar si estamos en /products y el cambio viene de fuera (no de nuestro propio input)
+    if (pathname === "/products") {
+      const urlSearch = searchParams?.get("search") || ""
+      // Solo actualizar si es diferente y no estamos escribiendo activamente en el navbar
+      const isNavbarInputFocused = document.activeElement?.closest('[data-navbar-search]')
+      if (urlSearch !== searchQuery && !isNavbarInputFocused) {
+        setSearchQuery(urlSearch)
       }
-
-      // Si estamos fuera de /products, solo navegar cuando haya texto
-      if (value) {
-        setSearchOpen(false)
-        setMobileMenuOpen(false)
-        router.replace(`/products?search=${encodeURIComponent(value)}`)
-      }
-    }, 300)
-
-    return () => clearTimeout(t)
-  }, [mobileMenuOpen, pathname, router, searchParams, searchQuery])
+    } else {
+      // Si no estamos en /products, mantener el searchQuery para uso futuro
+      // No limpiar para mantener el valor mientras navegas
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, searchParams?.get("search")])
 
   return (
     <header
@@ -210,16 +209,13 @@ export function Header() {
 
             {/* Desktop Search */}
             <div className="hidden md:flex flex-1 max-w-lg mx-8">
-              <div className="relative w-full group">
-                <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-sky-500 transition-colors" />
-                <Input
-                  type="search"
-                  placeholder="¿Qué estás buscando?"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 h-12 bg-secondary/50 border-0 rounded-2xl focus:ring-2 focus:ring-sky-300 transition-all duration-300 focus:bg-white"
-                />
-              </div>
+              <SearchAutocomplete
+                value={searchQuery}
+                onChange={setSearchQuery}
+                onSelect={handleNavbarSearch}
+                placeholder="¿Qué estás buscando?"
+                className="w-full"
+              />
             </div>
 
             {/* Right icons */}
@@ -408,17 +404,13 @@ export function Header() {
           {/* Mobile search */}
           {searchOpen && (
             <div className="md:hidden pb-4 animate-fade-in-up">
-              <div className="relative">
-                <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Buscar productos..."
-                  className="pl-12 h-12 bg-secondary/50 border-0 rounded-2xl"
-                  autoFocus
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
+              <SearchAutocomplete
+                value={searchQuery}
+                onChange={setSearchQuery}
+                onSelect={handleNavbarSearch}
+                placeholder="Buscar productos..."
+                className="w-full"
+              />
             </div>
           )}
         </div>

@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, X } from 'lucide-react';
+import { Search, X, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/store/auth-store';
 
 interface SearchAutocompleteProps {
   value: string;
@@ -33,17 +34,51 @@ export function SearchAutocomplete({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Cargar historial de búsquedas cuando el input está vacío
+  useEffect(() => {
+    if (!value.trim() && isAuthenticated) {
+      const loadHistory = async () => {
+        try {
+          const history = await api.getSearchHistory(5);
+          setHistorySuggestions(history.map((h: any) => h.searchTerm));
+        } catch {
+          // Ignorar errores
+        }
+      };
+      loadHistory();
+    } else {
+      setHistorySuggestions([]);
+    }
+  }, [value, isAuthenticated]);
+
   // Cargar sugerencias cuando el usuario escribe
   useEffect(() => {
     if (!value.trim() || value.length < 2) {
       setSuggestions([]);
-      setShowSuggestions(false);
+      if (!value.trim()) {
+        setShowSuggestions(historySuggestions.length > 0);
+      } else {
+        setShowSuggestions(false);
+      }
       return;
     }
 
     const loadSuggestions = async () => {
       setLoading(true);
       try {
+        // Primero intentar obtener sugerencias del historial
+        try {
+          const historySuggestions = await api.getSearchSuggestions(value, 3);
+          if (historySuggestions.length > 0) {
+            setSuggestions(historySuggestions);
+            setShowSuggestions(true);
+            setLoading(false);
+            return;
+          }
+        } catch {
+          // Continuar con búsqueda de productos si falla
+        }
+
         // Buscar productos con el término de búsqueda
         const response = await api.getProducts({
           search: value,

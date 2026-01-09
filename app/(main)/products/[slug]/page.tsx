@@ -37,16 +37,20 @@ export default async function ProductPage({ params }: PageProps) {
 
   let relatedProducts: any[] = []
   try {
-    // Si es combo, sugerir otros combos
-    if (product?.isCombo) {
-      const res = await api.getProducts({ page: 1, limit: 48, isCombo: true })
-      relatedProducts = (res.data || []).filter((p: any) => p.id !== product.id).slice(0, 8)
-    } else if (product?.categoryId) {
-      const res = await api.getProducts({ page: 1, limit: 24, categoryId: product.categoryId })
-      relatedProducts = (res.data || []).filter((p: any) => p.id !== product.id).slice(0, 8)
+    // Usar el nuevo endpoint de productos relacionados
+    if (product?.id) {
+      relatedProducts = await api.getRelatedProducts(product.id, 8)
     }
   } catch {
-    relatedProducts = []
+    // Fallback a búsqueda manual si el endpoint falla
+    try {
+      if (product?.categoryId) {
+        const res = await api.getProducts({ page: 1, limit: 24, categoryId: product.categoryId })
+        relatedProducts = (res.data || []).filter((p: any) => p.id !== product.id).slice(0, 8)
+      }
+    } catch {
+      relatedProducts = []
+    }
   }
 
   let reviewsData: any = null

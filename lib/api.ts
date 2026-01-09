@@ -463,6 +463,33 @@ export const api = {
     return response.data as BackendProduct
   },
 
+  // Productos relacionados
+  getRelatedProducts: async (productId: string, limit?: number): Promise<BackendProduct[]> => {
+    const queryParams = limit ? `?limit=${limit}` : ''
+    const response = await api.get(`/products/${productId}/related${queryParams}`)
+    return response.data as BackendProduct[]
+  },
+
+  // Historial de búsquedas
+  getSearchHistory: async (limit?: number): Promise<Array<{ id: string; searchTerm: string; resultsCount: number; createdAt: string }>> => {
+    const queryParams = limit ? `?limit=${limit}` : ''
+    const response = await api.get(`/search/history${queryParams}`)
+    return response.data
+  },
+
+  getPopularSearches: async (limit?: number): Promise<Array<{ term: string; count: number }>> => {
+    const queryParams = limit ? `?limit=${limit}` : ''
+    const response = await api.get(`/search/popular${queryParams}`)
+    return response.data
+  },
+
+  getSearchSuggestions: async (term: string, limit?: number): Promise<string[]> => {
+    const queryParams = new URLSearchParams({ term })
+    if (limit) queryParams.append('limit', limit.toString())
+    const response = await api.get(`/search/suggestions?${queryParams.toString()}`)
+    return response.data
+  },
+
   // Función para obtener categorías
   getCategories: async (): Promise<BackendCategory[]> => {
     const response = await api.get('/categories')

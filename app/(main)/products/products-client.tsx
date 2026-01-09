@@ -8,6 +8,7 @@ import { ChevronRight, Home } from 'lucide-react';
 import { api, mapBackendProductToFrontend } from '@/lib/api';
 import { toNumber } from '@/lib/money';
 import { ProductFilters, SearchFilters } from '@/components/product/product-filters';
+import { OptimizedImage } from '@/components/ui/optimized-image';
 
 type UIProduct = {
   id: string;
@@ -27,7 +28,6 @@ export default function ProductsClient() {
   const [categories, setCategories] = useState<Array<{ id: string; name: string; slug: string }>>([]);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
-  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
   const productsPerPage = 12;
 
   // Cargar categorías
@@ -185,14 +185,15 @@ export default function ProductsClient() {
                   className="group block bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-lg transition-shadow"
                 >
                   <div className="aspect-square bg-gray-50 overflow-hidden relative">
-                    {p.images?.[0] && !imageErrors.has(p.id) ? (
-                      <img
+                    {p.images?.[0] ? (
+                      <OptimizedImage
                         src={p.images[0]}
                         alt={p.name}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        fill
+                        className="transition-transform duration-500 group-hover:scale-105"
+                        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                        objectFit="cover"
                         loading="lazy"
-                        decoding="async"
-                        onError={() => setImageErrors(prev => new Set(prev).add(p.id))}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">

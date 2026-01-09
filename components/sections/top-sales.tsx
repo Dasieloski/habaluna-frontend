@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { HeartIcon } from "@/components/icons/streamline-icons"
 import { toNumber } from "@/lib/money"
+import { OptimizedImage } from "@/components/ui/optimized-image"
 
 interface Product {
   id: string
@@ -90,10 +91,15 @@ export function TopSales({ products }: TopSalesProps) {
           >
             <div className="relative h-full bg-white rounded-xl md:rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
               <div className="aspect-[4/3] lg:aspect-auto lg:h-full relative overflow-hidden">
-                <img
+                <OptimizedImage
                   src={featuredProduct.images?.[0] || "/placeholder.svg?height=600&width=600&query=featured product"}
                   alt={featuredProduct.name}
-                  className="w-full h-full object-cover lg:object-contain p-4 md:p-8 group-hover:scale-110 transition-transform duration-700"
+                  fill
+                  className="p-4 md:p-8 group-hover:scale-110 transition-transform duration-700 lg:object-contain"
+                  sizes="(max-width: 1024px) 66vw, 40vw"
+                  objectFit="cover"
+                  loading="eager"
+                  priority
                 />
                 <button
                   onClick={(e) => toggleFavorite(featuredProduct.id, e)}
@@ -130,10 +136,14 @@ export function TopSales({ products }: TopSalesProps) {
             >
               <div className="relative bg-white rounded-xl md:rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-2 h-full">
                 <div className="aspect-square relative overflow-hidden">
-                  <img
+                  <OptimizedImage
                     src={product.images?.[0] || "/placeholder.svg?height=300&width=300&query=product"}
                     alt={product.name}
-                    className="w-full h-full object-cover p-3 md:p-4 group-hover:scale-110 transition-transform duration-500"
+                    fill
+                    className="p-3 md:p-4 group-hover:scale-110 transition-transform duration-500"
+                    sizes="(max-width: 1024px) 33vw, 20vw"
+                    objectFit="cover"
+                    loading="lazy"
                   />
                   <button
                     onClick={(e) => toggleFavorite(product.id, e)}

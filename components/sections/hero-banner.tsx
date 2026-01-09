@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { ChevronRightIcon } from "@/components/icons/streamline-icons"
+import { OptimizedImage } from "@/components/ui/optimized-image"
 
 interface Banner {
   id: string
@@ -100,10 +101,15 @@ export function HeroBanner({ banners = defaultBanners }: HeroBannerProps) {
             >
               <div className="relative h-full min-h-[450px] md:min-h-[550px]">
                 {banner.image && (
-                  <img
+                  <OptimizedImage
                     src={banner.image || "/placeholder.svg"}
                     alt={banner.title}
-                    className="absolute inset-0 w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="100vw"
+                    objectFit="cover"
+                    loading="eager"
+                    priority
                   />
                 )}
                 {/* Overlay sutil */}

@@ -8,6 +8,7 @@ import { useCartStore } from "@/lib/store/cart-store"
 import { useToast } from "@/hooks/use-toast"
 import { useAuthStore } from "@/lib/store/auth-store"
 import { useWishlistStore } from "@/lib/store/wishlist-store"
+import { OptimizedImage } from "@/components/ui/optimized-image"
 
 interface ProductCardProps {
   product: {
@@ -36,7 +37,6 @@ const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1523275335684-37898b6ba
 
 export function ProductCard({ product, badge, badgeColor = "coral" }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false)
-  const [imageError, setImageError] = useState(false)
   const { toast } = useToast()
   const addToCart = useCartStore((s) => s.addToCart)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
@@ -66,25 +66,15 @@ export function ProductCard({ product, badge, badgeColor = "coral" }: ProductCar
     >
       <div className="relative bg-white rounded-xl md:rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
         <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
-          {imageError ? (
-            <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 p-4 md:p-6">
-              <div className="text-center">
-                <svg className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <p className="text-xs text-gray-400">Imagen no disponible</p>
-              </div>
-            </div>
-          ) : (
-            <img
-              src={currentImage}
-              alt={product.name}
-              className="w-full h-full object-cover p-4 md:p-6 transition-all duration-500 group-hover:scale-110"
-              loading="lazy"
-              decoding="async"
-              onError={() => setImageError(true)}
-            />
-          )}
+          <OptimizedImage
+            src={currentImage}
+            alt={product.name}
+            fill
+            className="p-4 md:p-6 transition-all duration-500 group-hover:scale-110"
+            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+            objectFit="cover"
+            loading="lazy"
+          />
 
           {badge && (
             <span

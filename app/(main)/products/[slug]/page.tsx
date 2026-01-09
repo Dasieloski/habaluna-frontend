@@ -49,14 +49,21 @@ export default async function ProductPage({ params }: PageProps) {
     relatedProducts = []
   }
 
-  let reviews: any[] = []
+  let reviewsData: any = null
   try {
     if (product?.id) {
-      reviews = await api.getProductReviews(product.id)
+      reviewsData = await api.getProductReviews(product.id, 1, 5)
     }
   } catch {
-    reviews = []
+    reviewsData = null
   }
 
-  return <ProductClient product={product} relatedProducts={relatedProducts} reviews={reviews} />
+  return (
+    <ProductClient
+      product={product}
+      relatedProducts={relatedProducts}
+      initialReviews={reviewsData?.data || []}
+      initialReviewsMeta={reviewsData?.meta}
+    />
+  )
 }

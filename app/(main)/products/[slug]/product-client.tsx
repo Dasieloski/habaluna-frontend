@@ -19,10 +19,18 @@ import {
 } from "@/components/icons/streamline-icons"
 import { OptimizedImage } from "@/components/ui/optimized-image"
 
+import { ProductReviews } from "@/components/reviews/product-reviews"
+
 interface ProductClientProps {
   product: any
   relatedProducts?: any[]
-  reviews?: any[]
+  initialReviews?: any[]
+  initialReviewsMeta?: {
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+  }
 }
 
 function normalizeImageUrl(imagePath: string): string {
@@ -33,7 +41,12 @@ function normalizeImageUrl(imagePath: string): string {
   return `${base}/uploads/${imagePath}`
 }
 
-export function ProductClient({ product, relatedProducts = [], reviews = [] }: ProductClientProps) {
+export function ProductClient({
+  product,
+  relatedProducts = [],
+  initialReviews = [],
+  initialReviewsMeta,
+}: ProductClientProps) {
   const { toast } = useToast()
   const addToCart = useCartStore((s) => s.addToCart)
   const [selectedImage, setSelectedImage] = useState(0)
@@ -44,18 +57,6 @@ export function ProductClient({ product, relatedProducts = [], reviews = [] }: P
   const relatedScrollRef = useRef<HTMLDivElement>(null)
   const isCombo = Boolean(product?.isCombo)
 
-  // Form reseña
-  const [reviewName, setReviewName] = useState("")
-  const [reviewEmail, setReviewEmail] = useState("")
-  const [reviewRating, setReviewRating] = useState(5)
-  const [reviewTitle, setReviewTitle] = useState("")
-  const [reviewContent, setReviewContent] = useState("")
-  const [isSubmittingReview, setIsSubmittingReview] = useState(false)
-  const [displayReviews, setDisplayReviews] = useState<any[]>(() => (Array.isArray(reviews) ? reviews : []))
-
-  useEffect(() => {
-    setDisplayReviews(Array.isArray(reviews) ? reviews : [])
-  }, [reviews])
 
   const images = useMemo(() => {
     const raw: string[] = Array.isArray(product?.images) ? product.images : []
@@ -148,44 +149,6 @@ export function ProductClient({ product, relatedProducts = [], reviews = [] }: P
     }
   }
 
-  const submitReview = async () => {
-    if (!product?.id) return
-    if (!reviewName.trim()) {
-      toast({ title: "Falta tu nombre", description: "Escribe tu nombre para publicar la reseña.", variant: "destructive" })
-      return
-    }
-    if (!reviewContent.trim()) {
-      toast({ title: "Falta el comentario", description: "Escribe el contenido de tu reseña.", variant: "destructive" })
-      return
-    }
-
-    setIsSubmittingReview(true)
-    try {
-      const created = await api.createProductReview(product.id, {
-        authorName: reviewName.trim(),
-        authorEmail: reviewEmail.trim() ? reviewEmail.trim() : undefined,
-        rating: Math.max(1, Math.min(5, Math.round(Number(reviewRating) || 5))),
-        title: reviewTitle.trim() ? reviewTitle.trim() : undefined,
-        content: reviewContent.trim(),
-      })
-      // Mostrarla inmediatamente (si no está aprobada, se verá como "pendiente")
-      setDisplayReviews((prev) => [created as any, ...(Array.isArray(prev) ? prev : [])])
-      setReviewTitle("")
-      setReviewContent("")
-      toast({
-        title: "Reseña enviada",
-        description: created?.isApproved ? "Gracias. Ya está publicada." : "Gracias. Quedará visible cuando sea aprobada.",
-      })
-    } catch (e: any) {
-      toast({
-        title: "Error",
-        description: e?.response?.data?.message || e?.message || "No se pudo enviar la reseña.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsSubmittingReview(false)
-    }
-  }
 
   const scrollRelated = (direction: "left" | "right") => {
     if (!relatedScrollRef.current) return
@@ -594,122 +557,17 @@ export function ProductClient({ product, relatedProducts = [], reviews = [] }: P
         </section>
           )}
 
-      {/* Reviews Section (placeholder) */}
+      {/* Reviews Section */}
       <section className="py-10 md:py-16 bg-sky-50/50">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-xl md:text-3xl font-bold text-foreground mb-6 text-center">Reseñas</h2>
 
-            {/* Dejar reseña */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-border/50 mb-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Dejar una reseña</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Nombre *</label>
-                  <input
-                    value={reviewName}
-                    onChange={(e) => setReviewName(e.target.value)}
-                    className="w-full px-4 py-3 border border-border rounded-xl text-sm focus:ring-2 focus:ring-sky-300 bg-background"
-                    placeholder="Tu nombre"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Email (opcional)</label>
-                  <input
-                    value={reviewEmail}
-                    onChange={(e) => setReviewEmail(e.target.value)}
-                    className="w-full px-4 py-3 border border-border rounded-xl text-sm focus:ring-2 focus:ring-sky-300 bg-background"
-                    placeholder="tu@email.com"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Rating</label>
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={reviewRating}
-                      onChange={(e) => setReviewRating(Number(e.target.value))}
-                      className="px-4 py-3 border border-border rounded-xl text-sm focus:ring-2 focus:ring-sky-300 bg-background"
-                    >
-                      {[5, 4, 3, 2, 1].map((v) => (
-                        <option key={v} value={v}>
-                          {v} / 5
-                        </option>
-                      ))}
-                    </select>
-                    <div className="flex items-center gap-1 text-amber-500">
-                      {Array.from({ length: 5 }, (_, i) => (
-                        <span key={i}>{i < (Number(reviewRating) || 0) ? "★" : "☆"}</span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-medium text-foreground">Título (opcional)</label>
-                  <input
-                    value={reviewTitle}
-                    onChange={(e) => setReviewTitle(e.target.value)}
-                    className="w-full px-4 py-3 border border-border rounded-xl text-sm focus:ring-2 focus:ring-sky-300 bg-background"
-                    placeholder="Resumen"
-                  />
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-medium text-foreground">Comentario *</label>
-                  <textarea
-                    value={reviewContent}
-                    onChange={(e) => setReviewContent(e.target.value)}
-                    className="w-full p-4 border border-border rounded-xl text-sm resize-none h-28 focus:ring-2 focus:ring-sky-300"
-                    placeholder="Escribe tu reseña..."
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end mt-4">
-                <button
-                  onClick={submitReview}
-                  disabled={isSubmittingReview}
-                  className="px-6 py-3 bg-foreground text-background rounded-xl font-medium hover:bg-foreground/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSubmittingReview ? "Enviando..." : "Enviar reseña"}
-                </button>
-              </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                Nota: tu reseña quedará <strong>pendiente</strong> hasta que sea aprobada.
-              </p>
-            </div>
-
-            {displayReviews.length === 0 ? (
-              <div className="bg-white rounded-xl p-6 shadow-sm text-center">
-                <p className="text-sm text-muted-foreground">Aún no hay reseñas para este producto.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {displayReviews.map((r: any) => (
-                  <div key={r.id} className="bg-white rounded-xl p-5 shadow-sm border border-border/50">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-foreground">{r.authorName || "Cliente"}</p>
-                          {r.isApproved === false && (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
-                              Pendiente
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1 text-amber-500 mt-1">
-                          {Array.from({ length: 5 }, (_, i) => (
-                            <span key={i}>{i < (Number(r.rating) || 0) ? "★" : "☆"}</span>
-                          ))}
-                          <span className="text-xs text-muted-foreground ml-2">
-                            {r.createdAt ? new Date(r.createdAt).toLocaleDateString("es-ES") : ""}
-                          </span>
-                        </div>
-                        {r.title && <p className="text-sm font-medium text-foreground mt-2">{r.title}</p>}
-        </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-3 whitespace-pre-wrap">{r.content}</p>
-                  </div>
-                ))}
-              </div>
-            )}
+            <ProductReviews
+              productId={product?.id}
+              productName={product?.name || "Producto"}
+              initialReviews={initialReviews}
+              initialReviewsMeta={initialReviewsMeta}
+            />
       </div>
     </div>
       </section>

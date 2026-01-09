@@ -603,23 +603,58 @@ export const api = {
   },
 
   // Reseñas (público)
-  getProductReviews: async (productId: string): Promise<BackendReview[]> => {
-    const response = await api.get(`/products/${productId}/reviews`)
-    return (response.data || []) as BackendReview[]
+  getProductReviews: async (productId: string, page?: number, limit?: number): Promise<{
+    data: BackendReview[]
+    meta: {
+      total: number
+      page: number
+      limit: number
+      totalPages: number
+    }
+  }> => {
+    const params = new URLSearchParams()
+    if (page) params.append('page', page.toString())
+    if (limit) params.append('limit', limit.toString())
+    const queryString = params.toString()
+    const response = await api.get(`/products/${productId}/reviews${queryString ? `?${queryString}` : ''}`)
+    return response.data as {
+      data: BackendReview[]
+      meta: {
+        total: number
+        page: number
+        limit: number
+        totalPages: number
+      }
+    }
   },
 
   createProductReview: async (
     productId: string,
     data: {
-      authorName: string
-      authorEmail?: string
       rating: number
       title?: string
-      content: string
+      comment: string
     },
   ) => {
     const response = await api.post(`/products/${productId}/reviews`, data)
     return response.data as BackendReview
+  },
+
+  updateProductReview: async (
+    reviewId: string,
+    data: {
+      rating?: number
+      title?: string
+      comment?: string
+    },
+  ): Promise<BackendReview> => {
+    const response = await api.put(`/reviews/${reviewId}`, data)
+    return response.data as BackendReview
+  },
+
+  deleteProductReview: async (reviewId: string): Promise<{ message: string }> => {
+    const response = await api.delete(`/reviews/${reviewId}`)
+    return response.data as { message: string }
   },
 
   // Reseñas (Admin)

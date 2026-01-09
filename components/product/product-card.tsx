@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useState } from "react"
 import { HeartIcon } from "@/components/icons/streamline-icons"
+import { Star } from "lucide-react"
 import { toNumber } from "@/lib/money"
 import { useCartStore } from "@/lib/store/cart-store"
 import { useToast } from "@/hooks/use-toast"
@@ -20,6 +21,8 @@ interface ProductCardProps {
     priceMNs?: number
     comparePriceUSD?: number
     comparePriceMNs?: number
+    averageRating?: number | string | null
+    reviewCount?: number
     variants?: Array<{
       id?: string
       name?: string
@@ -153,6 +156,19 @@ export function ProductCard({ product, badge, badgeColor = "coral" }: ProductCar
           <h3 className="text-xs md:text-sm font-medium text-foreground line-clamp-2 min-h-[2rem] md:min-h-[2.5rem] group-hover:text-sky-600 transition-colors">
             {product.name}
           </h3>
+          {product.averageRating && product.reviewCount && product.reviewCount > 0 && (
+            <div className="mt-1.5 md:mt-2 flex items-center gap-1.5">
+              <div className="flex items-center gap-0.5">
+                <Star className="h-3 w-3 md:h-3.5 md:w-3.5 fill-yellow-400 text-yellow-400" />
+                <span className="text-[10px] md:text-xs font-semibold text-foreground">
+                  {Number(product.averageRating).toFixed(1)}
+                </span>
+              </div>
+              <span className="text-[9px] md:text-[10px] text-muted-foreground">
+                ({product.reviewCount})
+              </span>
+            </div>
+          )}
           <div className="mt-2 md:mt-3 flex items-center gap-1.5 md:gap-2">
             <span className="text-sm md:text-lg font-bold text-foreground">${price.toFixed(2)}</span>
             {hasDiscount && (

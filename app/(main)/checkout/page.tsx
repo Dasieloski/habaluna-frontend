@@ -12,6 +12,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { formatPrice } from '@/lib/utils';
 import { SupernovaWidget } from '@/components/payment/supernova-widget';
 import { isCatalogMode } from '@/lib/catalog-mode';
@@ -23,10 +30,12 @@ const checkoutSchema = z.object({
   firstName: z.string().min(1, 'Nombre requerido'),
   lastName: z.string().min(1, 'Apellidos requeridos'),
   address: z.string().min(1, 'Dirección requerida'),
+  municipality: z.string().min(1, 'Municipio requerido'),
   city: z.string().min(1, 'Ciudad requerida'),
   zipCode: z.string().min(1, 'Código postal requerido'),
   country: z.string().min(1, 'País requerido'),
-  phone: z.string().optional(),
+  phone: z.string().min(1, 'Teléfono requerido'),
+  reference: z.string().optional(),
 });
 
 type CheckoutForm = z.infer<typeof checkoutSchema>;
@@ -50,11 +59,15 @@ export default function CheckoutPage() {
     register,
     handleSubmit,
     formState: { errors },
+    setValue,
+    watch,
   } = useForm<CheckoutForm>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
       firstName: user?.firstName || '',
       lastName: user?.lastName || '',
+      city: 'La Habana',
+      country: 'Cuba',
     },
   });
 
@@ -206,10 +219,10 @@ export default function CheckoutPage() {
   const total = subtotalWithDiscount + tax + shipping;
 
   return (
-    <div className="container py-12">
-      <h1 className="text-4xl font-bold mb-8">Checkout</h1>
+    <div className="container mx-auto max-w-7xl px-4 py-12">
+      <h1 className="text-4xl font-bold mb-8 text-center">Checkout</h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
         <div className="lg:col-span-2">
           {!showPayment ? (
             <Card>
@@ -284,43 +297,113 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="address">Dirección</Label>
-                  <Input id="address" {...register('address')} />
+                  <Label htmlFor="address">Dirección completa *</Label>
+                  <Input 
+                    id="address" 
+                    {...register('address')} 
+                    placeholder="Calle, número, entre calles"
+                  />
                   {errors.address && (
                     <p className="text-sm text-destructive">{errors.address.message}</p>
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="city">Ciudad</Label>
-                    <Input id="city" {...register('city')} />
+                    <Label htmlFor="municipality">Municipio *</Label>
+                    <Select
+                      value={watch('municipality') || ''}
+                      onValueChange={(value) => setValue('municipality', value, { shouldValidate: true })}
+                    >
+                      <SelectTrigger id="municipality">
+                        <SelectValue placeholder="Selecciona un municipio" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Playa">Playa</SelectItem>
+                        <SelectItem value="Vedado">Vedado</SelectItem>
+                        <SelectItem value="Centro Habana">Centro Habana</SelectItem>
+                        <SelectItem value="Habana Vieja">Habana Vieja</SelectItem>
+                        <SelectItem value="Habana del Este">Habana del Este</SelectItem>
+                        <SelectItem value="Marianao">Marianao</SelectItem>
+                        <SelectItem value="Cerro">Cerro</SelectItem>
+                        <SelectItem value="Diez de Octubre">Diez de Octubre</SelectItem>
+                        <SelectItem value="Arroyo Naranjo">Arroyo Naranjo</SelectItem>
+                        <SelectItem value="Boyeros">Boyeros</SelectItem>
+                        <SelectItem value="San Miguel del Padrón">San Miguel del Padrón</SelectItem>
+                        <SelectItem value="Cotorro">Cotorro</SelectItem>
+                        <SelectItem value="Guanabacoa">Guanabacoa</SelectItem>
+                        <SelectItem value="Regla">Regla</SelectItem>
+                        <SelectItem value="Plaza de la Revolución">Plaza de la Revolución</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.municipality && (
+                      <p className="text-sm text-destructive">{errors.municipality.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="city">Ciudad *</Label>
+                    <Input 
+                      id="city" 
+                      {...register('city')} 
+                      defaultValue="La Habana"
+                      readOnly
+                      className="bg-gray-50"
+                    />
                     {errors.city && (
                       <p className="text-sm text-destructive">{errors.city.message}</p>
                     )}
                   </div>
+                </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="zipCode">Código Postal</Label>
-                    <Input id="zipCode" {...register('zipCode')} />
+                    <Label htmlFor="zipCode">Código Postal *</Label>
+                    <Input 
+                      id="zipCode" 
+                      {...register('zipCode')} 
+                      placeholder="Ej: 10400"
+                    />
                     {errors.zipCode && (
                       <p className="text-sm text-destructive">{errors.zipCode.message}</p>
                     )}
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="country">País</Label>
-                    <Input id="country" {...register('country')} defaultValue="España" />
+                    <Label htmlFor="country">País *</Label>
+                    <Input 
+                      id="country" 
+                      {...register('country')} 
+                      defaultValue="Cuba"
+                      readOnly
+                      className="bg-gray-50"
+                    />
                     {errors.country && (
                       <p className="text-sm text-destructive">{errors.country.message}</p>
                     )}
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Teléfono *</Label>
+                    <Input 
+                      id="phone" 
+                      {...register('phone')} 
+                      placeholder="Ej: +53 5XXXXXXXX"
+                    />
+                    {errors.phone && (
+                      <p className="text-sm text-destructive">{errors.phone.message}</p>
+                    )}
+                  </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Teléfono (opcional)</Label>
-                    <Input id="phone" {...register('phone')} />
+                    <Label htmlFor="reference">Referencia (opcional)</Label>
+                    <Input 
+                      id="reference" 
+                      {...register('reference')} 
+                      placeholder="Puntos de referencia para la entrega"
+                    />
                   </div>
                 </div>
 

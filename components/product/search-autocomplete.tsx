@@ -28,15 +28,17 @@ export function SearchAutocomplete({
   className,
 }: SearchAutocompleteProps) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [historySuggestions, setHistorySuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   // Cargar historial de búsquedas cuando el input está vacío
   useEffect(() => {
-    if (!value.trim() && isAuthenticated) {
+    if (!value.trim() && isAuthenticated()) {
       const loadHistory = async () => {
         try {
           const history = await api.getSearchHistory(5);
@@ -49,7 +51,8 @@ export function SearchAutocomplete({
     } else {
       setHistorySuggestions([]);
     }
-  }, [value, isAuthenticated]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
 
   // Cargar sugerencias cuando el usuario escribe
   useEffect(() => {
@@ -149,7 +152,7 @@ export function SearchAutocomplete({
             setShowSuggestions(true);
           }}
           onFocus={() => {
-            if (suggestions.length > 0) {
+            if (suggestions.length > 0 || historySuggestions.length > 0) {
               setShowSuggestions(true);
             }
           }}
@@ -167,35 +170,61 @@ export function SearchAutocomplete({
       </div>
 
       {/* Dropdown de sugerencias */}
-      {showSuggestions && (suggestions.length > 0 || loading) && (
+      {showSuggestions && (suggestions.length > 0 || historySuggestions.length > 0 || loading) && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
           {loading ? (
             <div className="p-3 text-sm text-gray-500 text-center">Buscando...</div>
           ) : (
             <>
-              {suggestions.map((suggestion, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => handleSelect(suggestion)}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <Search className="w-3 h-3 text-gray-400" />
-                    <span>{suggestion}</span>
+              {/* Mostrar historial de búsquedas si el input está vacío */}
+              {!value.trim() && historySuggestions.length > 0 && (
+                <>
+                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase border-b">
+                    Búsquedas recientes
                   </div>
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => {
-                  router.push(`/products?search=${encodeURIComponent(value)}`);
-                  setShowSuggestions(false);
-                }}
-                className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm font-medium text-sky-600 border-t border-gray-200"
-              >
-                Ver todos los resultados para "{value}"
-              </button>
+                  {historySuggestions.map((suggestion, index) => (
+                    <button
+                      key={`history-${index}`}
+                      type="button"
+                      onClick={() => handleSelect(suggestion)}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-3 h-3 text-gray-400" />
+                        <span>{suggestion}</span>
+                      </div>
+                    </button>
+                  ))}
+                </>
+              )}
+              {/* Mostrar sugerencias de productos */}
+              {value.trim() && suggestions.length > 0 && (
+                <>
+                  {suggestions.map((suggestion, index) => (
+                    <button
+                      key={`suggestion-${index}`}
+                      type="button"
+                      onClick={() => handleSelect(suggestion)}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Search className="w-3 h-3 text-gray-400" />
+                        <span>{suggestion}</span>
+                      </div>
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      router.push(`/products?search=${encodeURIComponent(value)}`);
+                      setShowSuggestions(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm font-medium text-sky-600 border-t border-gray-200"
+                  >
+                    Ver todos los resultados para "{value}"
+                  </button>
+                </>
+              )}
             </>
           )}
         </div>

@@ -197,7 +197,7 @@ export function SearchAutocomplete({
 
       {/* Dropdown de sugerencias */}
       {showSuggestions && (suggestions.length > 0 || historySuggestions.length > 0 || loading) && (
-        <div className="absolute left-0 right-0 z-80 mt-2 overflow-hidden rounded-2xl border border-border bg-background/95 backdrop-blur-xl shadow-2xl max-h-72 overflow-y-auto">
+        <div className="absolute left-0 right-0 z-80 mt-2 overflow-hidden rounded-2xl border border-border bg-background shadow-2xl max-h-72 overflow-y-auto">
           {loading ? (
             <div className="p-3 text-sm text-muted-foreground text-center">Buscando...</div>
           ) : (

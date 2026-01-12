@@ -26,6 +26,7 @@ import { useCartValidation } from '@/hooks/use-cart-validation';
 import { AlertTriangle, Tag, X } from 'lucide-react';
 import { showSuccess, showError } from '@/components/ui/use-toast';
 import { FormError } from '@/components/ui/form-error';
+import { COUNTRIES, getMunicipalitiesByCountry } from '@/lib/geo/countries';
 
 const checkoutSchema = z.object({
   firstName: z.string().min(1, 'Nombre requerido'),
@@ -33,7 +34,6 @@ const checkoutSchema = z.object({
   address: z.string().min(1, 'Dirección requerida'),
   municipality: z.string().min(1, 'Municipio requerido'),
   city: z.string().min(1, 'Ciudad requerida'),
-  zipCode: z.string().min(1, 'Código postal requerido'),
   country: z.string().min(1, 'País requerido'),
   phone: z.string().min(1, 'Teléfono requerido'),
   reference: z.string().optional(),
@@ -71,6 +71,9 @@ export default function CheckoutPage() {
       country: 'Cuba',
     },
   });
+
+  const selectedCountry = watch('country') || 'Cuba';
+  const municipalities = getMunicipalitiesByCountry(selectedCountry);
 
   useEffect(() => {
     // En modo catálogo, redirigir a productos
@@ -117,9 +120,11 @@ export default function CheckoutPage() {
       }
 
       // Crear la orden primero (sin procesar el pago aún)
+      // Nota: el backend acepta objetos libres en shippingAddress; mantenemos zipCode vacío por compatibilidad.
+      const addressForApi = { ...data, zipCode: '' } as any;
       const orderData = {
-        shippingAddress: data,
-        billingAddress: data,
+        shippingAddress: addressForApi,
+        billingAddress: addressForApi,
         offerId: appliedCoupon?.id, // ID del cupón aplicado
         // No incluimos paymentIntentId todavía, se agregará después del pago exitoso
       };
@@ -215,9 +220,9 @@ export default function CheckoutPage() {
   };
 
   const subtotalWithDiscount = subtotal - (appliedCoupon?.discount || 0);
-  const tax = subtotalWithDiscount * 0.21;
+  // En Cuba no se aplica IVA en este flujo
   const shipping = subtotalWithDiscount >= 50 ? 0 : 5.99;
-  const total = subtotalWithDiscount + tax + shipping;
+  const total = subtotalWithDiscount + shipping;
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12">
@@ -236,7 +241,7 @@ export default function CheckoutPage() {
                   {validation && hasIssues && (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
                       <div className="flex items-start gap-3">
-                        <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                        <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
                         <div className="flex-1">
                           <h3 className="font-semibold text-red-900 mb-2">Problemas de disponibilidad</h3>
                           <ul className="space-y-1 text-sm text-red-800">
@@ -311,6 +316,36 @@ export default function CheckoutPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
+                    <Label htmlFor="country">País *</Label>
+                    <Select
+                      value={selectedCountry}
+                      onValueChange={(value) => {
+                        const prev = selectedCountry;
+                        setValue('country', value, { shouldValidate: true });
+                        // Reset de municipio al cambiar país
+                        if (value !== prev) {
+                          setValue('municipality', '', { shouldValidate: true });
+                          // Ajuste opcional de ciudad por defecto
+                          if (value === 'Cuba') setValue('city', 'La Habana', { shouldValidate: true });
+                          else setValue('city', '', { shouldValidate: true });
+                        }
+                      }}
+                    >
+                      <SelectTrigger id="country">
+                        <SelectValue placeholder="Selecciona un país" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COUNTRIES.map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {c}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.country && <FormError message={errors.country.message} />}
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="municipality">Municipio *</Label>
                     <Select
                       value={watch('municipality') || ''}
@@ -320,21 +355,11 @@ export default function CheckoutPage() {
                         <SelectValue placeholder="Selecciona un municipio" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Playa">Playa</SelectItem>
-                        <SelectItem value="Vedado">Vedado</SelectItem>
-                        <SelectItem value="Centro Habana">Centro Habana</SelectItem>
-                        <SelectItem value="Habana Vieja">Habana Vieja</SelectItem>
-                        <SelectItem value="Habana del Este">Habana del Este</SelectItem>
-                        <SelectItem value="Marianao">Marianao</SelectItem>
-                        <SelectItem value="Cerro">Cerro</SelectItem>
-                        <SelectItem value="Diez de Octubre">Diez de Octubre</SelectItem>
-                        <SelectItem value="Arroyo Naranjo">Arroyo Naranjo</SelectItem>
-                        <SelectItem value="Boyeros">Boyeros</SelectItem>
-                        <SelectItem value="San Miguel del Padrón">San Miguel del Padrón</SelectItem>
-                        <SelectItem value="Cotorro">Cotorro</SelectItem>
-                        <SelectItem value="Guanabacoa">Guanabacoa</SelectItem>
-                        <SelectItem value="Regla">Regla</SelectItem>
-                        <SelectItem value="Plaza de la Revolución">Plaza de la Revolución</SelectItem>
+                        {municipalities.map((m) => (
+                          <SelectItem key={m} value={m}>
+                            {m}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     {errors.municipality && (
@@ -347,40 +372,10 @@ export default function CheckoutPage() {
                     <Input 
                       id="city" 
                       {...register('city')} 
-                      defaultValue="La Habana"
-                      readOnly
-                      className="bg-gray-50"
+                      placeholder="Ciudad / Provincia"
                     />
                     {errors.city && (
                       <FormError message={errors.city.message} />
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="zipCode">Código Postal *</Label>
-                    <Input 
-                      id="zipCode" 
-                      {...register('zipCode')} 
-                      placeholder="Ej: 10400"
-                    />
-                    {errors.zipCode && (
-                      <FormError message={errors.zipCode.message} />
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="country">País *</Label>
-                    <Input 
-                      id="country" 
-                      {...register('country')} 
-                      defaultValue="Cuba"
-                      readOnly
-                      className="bg-gray-50"
-                    />
-                    {errors.country && (
-                      <FormError message={errors.country.message} />
                     )}
                   </div>
                 </div>
@@ -544,10 +539,6 @@ export default function CheckoutPage() {
                 <div className="flex justify-between">
                   <span>Subtotal con descuento</span>
                   <span>{formatPrice(subtotalWithDiscount)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>IVA (21%)</span>
-                  <span>{formatPrice(tax)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Envío</span>

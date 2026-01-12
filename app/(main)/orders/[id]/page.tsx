@@ -106,7 +106,7 @@ export default function OrderDetailPage() {
               </p>
               <p>{order.shippingAddress.address}</p>
               <p>
-                {order.shippingAddress.zipCode} {order.shippingAddress.city}
+                {(order.shippingAddress.municipality ? `${order.shippingAddress.municipality}, ` : '') + (order.shippingAddress.city || '')}
               </p>
               <p>{order.shippingAddress.country}</p>
               {order.shippingAddress.phone && <p>{order.shippingAddress.phone}</p>}
@@ -126,10 +126,6 @@ export default function OrderDetailPage() {
               <div className="flex justify-between">
                 <span>Subtotal</span>
                 <span>{formatPrice(order.subtotal)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>IVA (21%)</span>
-                <span>{formatPrice(order.tax)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Envío</span>

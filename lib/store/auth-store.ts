@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface User {
   id: string;
@@ -18,44 +17,38 @@ interface User {
 interface AuthState {
   user: User | null;
   accessToken: string | null;
-  refreshToken: string | null;
-  setAuth: (user: User, accessToken: string, refreshToken: string) => void;
+  isBootstrapped: boolean;
+  setAuth: (user: User, accessToken: string) => void;
+  setAccessToken: (accessToken: string | null) => void;
+  setBootstrapped: (value: boolean) => void;
   logout: () => void;
   isAuthenticated: () => boolean;
   isAdmin: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => ({
-      user: null,
-      accessToken: null,
-      refreshToken: null,
-      setAuth: (user, accessToken, refreshToken) => {
-        set({ user, accessToken, refreshToken });
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('accessToken', accessToken);
-          localStorage.setItem('refreshToken', refreshToken);
-        }
-      },
-      logout: () => {
-        set({ user: null, accessToken: null, refreshToken: null });
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-        }
-      },
-      isAuthenticated: () => {
-        return get().user !== null && get().accessToken !== null;
-      },
-      isAdmin: () => {
-        return get().user?.role === 'ADMIN';
-      },
-    }),
-    {
-      name: 'auth-storage',
-      storage: createJSONStorage(() => localStorage),
+  (set, get) => ({
+    user: null,
+    accessToken: null,
+    isBootstrapped: false,
+    setAuth: (user, accessToken) => {
+      set({ user, accessToken });
     },
-  ),
+    setAccessToken: (accessToken) => {
+      set({ accessToken });
+    },
+    setBootstrapped: (value) => {
+      set({ isBootstrapped: value });
+    },
+    logout: () => {
+      set({ user: null, accessToken: null });
+    },
+    isAuthenticated: () => {
+      return get().user !== null && !!get().accessToken;
+    },
+    isAdmin: () => {
+      return String(get().user?.role || '').toUpperCase() === 'ADMIN';
+    },
+  }),
 );
 

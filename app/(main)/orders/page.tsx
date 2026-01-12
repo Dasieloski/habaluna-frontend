@@ -95,6 +95,7 @@ export default function OrdersPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { isAuthenticated, user } = useAuthStore();
+  const isBootstrapped = useAuthStore((s) => s.isBootstrapped)
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -102,6 +103,7 @@ export default function OrdersPage() {
   const [filteredOrders, setFilteredOrders] = useState<any[]>([]);
 
   useEffect(() => {
+    if (!isBootstrapped) return;
     if (!isAuthenticated()) {
       router.push('/auth/login');
       return;
@@ -126,7 +128,7 @@ export default function OrdersPage() {
     };
 
     fetchOrders();
-  }, [isAuthenticated, router, toast]);
+  }, [isAuthenticated, isBootstrapped, router, toast]);
 
   useEffect(() => {
     let filtered = orders;

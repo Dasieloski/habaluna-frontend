@@ -21,12 +21,14 @@ export default function CartPage() {
   const [loadingSuggestions, setLoadingSuggestions] = useState(true)
   const [isLoadingCart, setIsLoadingCart] = useState(true)
   const { isAuthenticated } = useAuthStore()
+  const isBootstrapped = useAuthStore((s) => s.isBootstrapped)
   const { items, subtotal, fetchCart, updateItemQuantity, removeItem, addToCart } = useCartStore()
   const { validation, getItemErrorMessage, hasItemIssue, getItemAvailableStock } = useCartValidation()
   const { toast } = useToast()
 
   useEffect(() => {
     const loadCart = async () => {
+      if (!isBootstrapped) return
       if (isAuthenticated()) {
         setIsLoadingCart(true)
         try {
@@ -39,7 +41,7 @@ export default function CartPage() {
       }
     }
     loadCart()
-  }, [fetchCart, isAuthenticated])
+  }, [fetchCart, isAuthenticated, isBootstrapped])
 
   // Cargar productos sugeridos
   useEffect(() => {

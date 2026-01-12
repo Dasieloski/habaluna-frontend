@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next"
 import { Poppins } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/toaster"
+import { Providers } from "./providers"
 import "./globals.css"
 
 const poppins = Poppins({
@@ -12,12 +13,32 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
-  title: "Habaluna - Tu tienda de productos originales",
-  description: "Descubre productos únicos: alimentos, materiales y mucho más. Calidad y originalidad en cada compra.",
+  metadataBase: new URL((process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "")),
+  title: {
+    default: "Habaluna - Tu tienda de productos originales",
+    template: "%s | Habaluna",
+  },
+  description:
+    "Descubre productos únicos: alimentos, materiales y mucho más. Calidad y originalidad en cada compra.",
   icons: {
     icon: "/logo.png",
   },
-    generator: 'v0.app'
+  openGraph: {
+    type: "website",
+    siteName: "Habaluna",
+    title: "Habaluna - Tu tienda de productos originales",
+    description:
+      "Descubre productos únicos: alimentos, materiales y mucho más. Calidad y originalidad en cada compra.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Habaluna - Tu tienda de productos originales",
+    description:
+      "Descubre productos únicos: alimentos, materiales y mucho más. Calidad y originalidad en cada compra.",
+  },
+  alternates: {
+    canonical: "/",
+  },
 }
 
 export const viewport: Viewport = {
@@ -39,7 +60,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Londrina+Shadow&display=swap" rel="stylesheet" />
       </head>
       <body className={`${poppins.className} antialiased`}>
-        {children}
+        <Providers>{children}</Providers>
         <Toaster />
         <Analytics />
       </body>

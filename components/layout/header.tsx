@@ -47,7 +47,7 @@ export function Header() {
     highlights: [string, string, string, string]
   }>({
     announcement: "Envíos a toda la Habana - Entrega rápida",
-    highlights: ["Envío gratis +50€", "30 días devolución", "Pago seguro", "4.8/5 valoración"],
+    highlights: ["Envío gratis +$50", "30 días devolución", "Pago seguro", "4.8/5 valoración"],
   })
 
   const [navItems, setNavItems] = useState<Array<{ name: string; href: string }>>([])

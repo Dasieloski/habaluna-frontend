@@ -37,14 +37,14 @@ export default function LoginPage() {
     try {
       setError("")
       const response = await api.post("/auth/login", data)
-      const { user, accessToken, refreshToken } = response.data
+      const { user, accessToken } = response.data
 
-      setAuth(user, accessToken, refreshToken)
+      setAuth(user, accessToken)
       // Cargar perfil completo (teléfono/dirección/estado, etc.) para usarlo en toda la app
       try {
         const meRes = await api.get("/users/me")
         const me = meRes.data
-        setAuth({ ...user, ...me }, accessToken, refreshToken)
+        setAuth({ ...user, ...me }, accessToken)
       } catch (e) {
         // No bloquear el login si falla el fetch del perfil
       }

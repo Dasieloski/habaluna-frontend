@@ -78,7 +78,7 @@ export default function AdminBannersPage() {
   const [categoryOptions, setCategoryOptions] = useState<Array<{ id: string; name: string }>>([])
   const [uiForm, setUiForm] = useState({
     headerAnnouncement: "Envíos a toda la Habana - Entrega rápida",
-    h1: "Envío gratis +50€",
+    h1: "Envío gratis +$50",
     h2: "30 días devolución",
     h3: "Pago seguro",
     h4: "4.8/5 valoración",

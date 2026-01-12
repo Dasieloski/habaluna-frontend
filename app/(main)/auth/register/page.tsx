@@ -61,14 +61,14 @@ export default function RegisterPage() {
         firstName: data.firstName,
         lastName: data.lastName,
       })
-      const { user, accessToken, refreshToken } = response.data
+      const { user, accessToken } = response.data
 
-      setAuth(user, accessToken, refreshToken)
+      setAuth(user, accessToken)
       // Cargar perfil completo (por consistencia con login)
       try {
         const meRes = await api.get("/users/me")
         const me = meRes.data
-        setAuth({ ...user, ...me }, accessToken, refreshToken)
+        setAuth({ ...user, ...me }, accessToken)
       } catch (e) {
         // No bloquear el registro si falla el fetch del perfil
       }

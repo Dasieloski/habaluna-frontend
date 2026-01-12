@@ -64,7 +64,8 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState('overview');
   const router = useRouter();
   const { toast } = useToast();
-  const { isAuthenticated, user, accessToken, refreshToken, setAuth } = useAuthStore();
+  const { isAuthenticated, user, accessToken, setAuth } = useAuthStore();
+  const isBootstrapped = useAuthStore((s) => s.isBootstrapped)
   const { items: wishlistItems, fetchWishlist } = useWishlistStore();
 
   const {
@@ -77,6 +78,7 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
+    if (!isBootstrapped) return;
     if (!isAuthenticated()) {
       router.push('/auth/login');
       return;
@@ -95,8 +97,8 @@ export default function ProfilePage() {
         fetchWishlist();
 
         // Mantener el store sincronizado
-        if (accessToken && refreshToken) {
-          setAuth({ ...(user || {}), ...profileResponse.data }, accessToken, refreshToken);
+        if (accessToken) {
+          setAuth({ ...(user || {}), ...profileResponse.data }, accessToken);
         }
       } catch (error: any) {
         console.error('Error fetching data:', error);
@@ -111,7 +113,7 @@ export default function ProfilePage() {
     };
 
     fetchData();
-  }, [isAuthenticated, router, reset, accessToken, refreshToken, user, setAuth, fetchWishlist, toast]);
+  }, [isAuthenticated, isBootstrapped, router, reset, accessToken, user, setAuth, fetchWishlist, toast]);
 
   const onSubmit = async (data: ProfileForm) => {
     setSaving(true);
@@ -120,8 +122,8 @@ export default function ProfilePage() {
       const profileResponse = await api.get('/users/me');
       setProfile(profileResponse.data);
       reset(profileResponse.data);
-      if (accessToken && refreshToken) {
-        setAuth({ ...(user || {}), ...profileResponse.data }, accessToken, refreshToken);
+      if (accessToken) {
+        setAuth({ ...(user || {}), ...profileResponse.data }, accessToken);
       }
       toast({
         title: 'Éxito',

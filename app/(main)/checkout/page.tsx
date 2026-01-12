@@ -53,6 +53,7 @@ export default function CheckoutPage() {
   const [couponError, setCouponError] = useState('');
   const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
+  const isBootstrapped = useAuthStore((s) => s.isBootstrapped)
   const { items, subtotal, clearCart, fetchCart } = useCartStore();
   const { validation, validateCart, isValid, hasIssues, loading: validationLoading } = useCartValidation();
 
@@ -82,6 +83,9 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Esperar a que la sesión se bootstrapee (refresh cookie) antes de redirigir
+    if (!isBootstrapped) return;
+
     if (!isAuthenticated()) {
       router.push('/auth/login');
       return;
@@ -94,7 +98,7 @@ export default function CheckoutPage() {
 
     // Validar el carrito al entrar al checkout
     validateCart();
-  }, [isAuthenticated, items, router, validateCart]);
+  }, [isAuthenticated, isBootstrapped, items, router, validateCart]);
 
   // Redirigir si hay problemas de stock
   useEffect(() => {
@@ -226,7 +230,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12">
-      <h1 className="text-4xl font-bold mb-8 text-center">Checkout</h1>
+      <h1 className="text-4xl font-bold mb-8 text-center">Finalizar compra</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
         <div className="lg:col-span-2">

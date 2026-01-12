@@ -28,7 +28,7 @@ export default function AdminLoginPage() {
 
     try {
       const response = await api.post("/auth/login", { email, password })
-      const { user, accessToken, refreshToken } = response.data
+      const { user, accessToken } = response.data
 
       // Verificar que el usuario tenga rol ADMIN
       if (user.role !== "ADMIN" && user.role !== "admin") {
@@ -38,7 +38,7 @@ export default function AdminLoginPage() {
       }
 
       // Guardar autenticación
-      setAuth(user, accessToken, refreshToken)
+      setAuth(user, accessToken)
       
       // Redirigir al admin
       router.push("/admin")

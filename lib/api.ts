@@ -1,3 +1,5 @@
+import { useAuthStore } from "@/lib/store/auth-store"
+
 function normalizeApiBaseUrl(raw: string): string {
   let url = (raw || "").trim()
   if (!url) return "http://localhost:4000"
@@ -13,34 +15,14 @@ function normalizeApiBaseUrl(raw: string): string {
 // Asegurar que API_BASE_URL no termine con /api y que sea URL válida (con protocolo)
 let API_BASE_URL = normalizeApiBaseUrl(process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000")
 
-// Función helper para obtener el token de autenticación
+// Token en memoria (Zustand). El refresh token vive en cookie HttpOnly (backend).
 const getAuthToken = (): string | null => {
-  if (typeof window === 'undefined') return null
-  
-  // Primero intentar obtener del localStorage directo (lo guarda setAuth)
-  const directToken = localStorage.getItem('accessToken')
-  if (directToken && directToken.trim() !== '') {
-    return directToken.trim()
+  try {
+    const t = useAuthStore.getState().accessToken
+    return t && t.trim() ? t.trim() : null
+  } catch {
+    return null
   }
-  
-  // Si no, intentar obtener del persist storage de Zustand
-  const authStorage = localStorage.getItem('auth-storage')
-  if (authStorage) {
-    try {
-      const parsed = JSON.parse(authStorage)
-      const token = parsed.state?.accessToken
-      if (token && token.trim() !== '') {
-        // Sincronizar con localStorage directo para futuras consultas
-        localStorage.setItem('accessToken', token.trim())
-        return token.trim()
-      }
-    } catch (e) {
-      console.error("Error parsing auth-storage:", e)
-      return null
-    }
-  }
-  
-  return null
 }
 
 type ApiError = Error & {
@@ -50,10 +32,11 @@ type ApiError = Error & {
 }
 
 function clearAuthStorage() {
-  if (typeof window === "undefined") return
-  localStorage.removeItem("accessToken")
-  localStorage.removeItem("refreshToken")
-  localStorage.removeItem("auth-storage")
+  try {
+    useAuthStore.getState().logout()
+  } catch {
+    // ignore
+  }
 }
 
 function redirectToAdminLoginIfOnAdmin() {
@@ -82,6 +65,65 @@ async function buildApiError(response: Response, finalUrl: string): Promise<ApiE
   err.url = finalUrl
   err.response = { data: { message: errorMessage } }
   return err
+}
+
+async function refreshAccessToken(): Promise<string | null> {
+  try {
+    const url = `${API_BASE_URL}/api/auth/refresh`
+    const res = await fetch(url, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    })
+    if (!res.ok) return null
+    const data = await res.json().catch(() => null)
+    const token = data?.accessToken
+    if (typeof token === "string" && token.trim()) {
+      useAuthStore.getState().setAccessToken(token.trim())
+      return token.trim()
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+async function fetchJsonWithAuth(
+  finalUrl: string,
+  init: RequestInit & { retryOn401?: boolean } = {},
+) {
+  const token = getAuthToken()
+  // Normalizar a objeto plano para poder setear Authorization sin problemas de tipos
+  const headers: Record<string, string> = {
+    ...(init.headers as any),
+  }
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+
+  const response = await fetch(finalUrl, {
+    ...init,
+    headers,
+    credentials: "include", // enviar cookie HttpOnly de refresh token
+  })
+
+  // 401 -> intentar refresh una vez y reintentar
+  if (response.status === 401 && init.retryOn401 !== false) {
+    const newToken = await refreshAccessToken()
+    if (newToken) {
+      const retryHeaders: Record<string, string> = { ...(headers || {}) }
+      retryHeaders.Authorization = `Bearer ${newToken}`
+      return fetch(finalUrl, {
+        ...init,
+        headers: retryHeaders,
+        credentials: "include",
+      })
+    }
+    handleUnauthorized()
+  }
+
+  return response
 }
 
 // Tipos para la respuesta de la API del backend
@@ -322,23 +364,14 @@ export const api = {
       // Construir URL final - API_BASE_URL no incluye /api, lo agregamos aquí
       const finalUrl = `${API_BASE_URL}/api${finalPath}`
       
-      const token = getAuthToken()
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-      }
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`
-      }
-
       // Retry logic para requests fallidos (solo en cliente)
       const fetchWithRetry = async (): Promise<Response> => {
         if (typeof window !== 'undefined') {
           // Solo usar retry en el cliente
           const { retryFetch } = await import('./api-retry');
           return retryFetch(
-            () => fetch(finalUrl, {
-              headers,
+            () => fetchJsonWithAuth(finalUrl, {
+              headers: { 'Content-Type': 'application/json' },
               cache: "no-store",
             }),
             {
@@ -349,8 +382,8 @@ export const api = {
           );
         }
         // En servidor, fetch normal
-        return fetch(finalUrl, {
-          headers,
+        return fetchJsonWithAuth(finalUrl, {
+          headers: { 'Content-Type': 'application/json' },
           cache: "no-store",
         });
       };
@@ -848,17 +881,9 @@ export const api = {
     const formData = new FormData()
     formData.append('file', file)
     
-    const token = getAuthToken()
-    const headers: HeadersInit = {}
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`
-    }
-    
     const url = `${API_BASE_URL}/api/upload/single`
-    const response = await fetch(url, {
+    const response = await fetchJsonWithAuth(url, {
       method: 'POST',
-      headers,
       body: formData,
       // No incluir Content-Type header, el navegador lo hace automáticamente con FormData
     })
@@ -909,7 +934,7 @@ export const api = {
       
       headers['Authorization'] = `Bearer ${token}`
 
-      const response = await fetch(finalUrl, {
+      const response = await fetchJsonWithAuth(finalUrl, {
         method: 'PATCH',
         headers,
         body: JSON.stringify(data),
@@ -935,6 +960,77 @@ export const api = {
         throw error
       }
       
+      const responseData = await response.json()
+      return { data: responseData }
+    } catch (error: any) {
+      if (error.response || error.status) {
+        throw error
+      }
+      const formattedError: any = new Error(error.message || "Error de conexión")
+      formattedError.status = error.status || 500
+      formattedError.response = { data: { message: error.message || "Error de conexión" } }
+      throw formattedError
+    }
+  },
+
+  // Función genérica PUT
+  put: async (endpoint: string, data: any) => {
+    try {
+      const [pathPart, queryPart] = endpoint.includes('?') ? endpoint.split('?', 2) : [endpoint, '']
+
+      let cleanPath = pathPart.trim()
+      while (cleanPath.startsWith('/api')) {
+        cleanPath = cleanPath.substring(4)
+      }
+
+      if (!cleanPath.startsWith('/')) {
+        cleanPath = '/' + cleanPath
+      }
+
+      const finalPath = queryPart ? `${cleanPath}?${queryPart}` : cleanPath
+      const finalUrl = `${API_BASE_URL}/api${finalPath}`
+
+      const token = getAuthToken()
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      }
+
+      if (!token) {
+        const errorMessage = "No estás autenticado. Por favor, inicia sesión nuevamente."
+        redirectToAdminLoginIfOnAdmin()
+        const err: any = new Error(errorMessage)
+        err.status = 401
+        err.response = { data: { message: errorMessage } }
+        throw err
+      }
+
+      ;(headers as any)['Authorization'] = `Bearer ${token}`
+
+      const response = await fetchJsonWithAuth(finalUrl, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          handleUnauthorized()
+          throw new Error("Tu sesión ha expirado. Por favor, inicia sesión nuevamente.")
+        }
+
+        let errorMessage = `API Error: ${response.status} ${response.statusText}`
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.message || errorData.error || errorMessage
+        } catch {
+          // ignore
+        }
+        const error: any = new Error(errorMessage)
+        error.status = response.status
+        error.response = { data: { message: errorMessage } }
+        throw error
+      }
+
       const responseData = await response.json()
       return { data: responseData }
     } catch (error: any) {
@@ -975,7 +1071,7 @@ export const api = {
         headers['Authorization'] = `Bearer ${token}`
       }
 
-      const response = await fetch(finalUrl, {
+      const response = await fetchJsonWithAuth(finalUrl, {
         method: 'DELETE',
         headers,
       })
@@ -1042,7 +1138,7 @@ export const api = {
         headers['Authorization'] = `Bearer ${token}`
       }
 
-      const response = await fetch(finalUrl, {
+      const response = await fetchJsonWithAuth(finalUrl, {
         method: 'POST',
         headers,
         body: JSON.stringify(data),

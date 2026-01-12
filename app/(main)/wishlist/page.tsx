@@ -29,6 +29,7 @@ function normalizeImageUrl(imagePath: string): string {
 export default function WishlistPage() {
   const { toast } = useToast()
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const isBootstrapped = useAuthStore((s) => s.isBootstrapped)
   const { items, fetchWishlist, remove } = useWishlistStore()
   const addToCart = useCartStore((s) => s.addToCart)
   const [trendingScroll, setTrendingScroll] = useState(0)
@@ -37,6 +38,7 @@ export default function WishlistPage() {
 
   useEffect(() => {
     const loadWishlist = async () => {
+      if (!isBootstrapped) return
       if (isAuthenticated()) {
         setIsLoadingWishlist(true)
         try {
@@ -49,7 +51,7 @@ export default function WishlistPage() {
       }
     }
     loadWishlist()
-  }, [fetchWishlist, isAuthenticated])
+  }, [fetchWishlist, isAuthenticated, isBootstrapped])
 
   useEffect(() => {
     const load = async () => {
@@ -186,11 +188,11 @@ export default function WishlistPage() {
                 {/* Price */}
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-base sm:text-lg font-bold text-rose-500">
-                    {price.toFixed(2).replace(".", ",")} €
+                    ${price.toFixed(2).replace(".", ",")}
                   </span>
                   {hasDiscount && (
                     <span className="text-sm text-gray-400 line-through">
-                      {compare!.toFixed(2).replace(".", ",")} €
+                      ${compare!.toFixed(2).replace(".", ",")}
                     </span>
                   )}
                 </div>
@@ -288,7 +290,7 @@ export default function WishlistPage() {
                   </h3>
                 </Link>
                 <span className="text-sm sm:text-base font-bold text-gray-900">
-                  {price.toFixed(2).replace(".", ",")} €
+                  ${price.toFixed(2).replace(".", ",")}
                 </span>
               </div>
             )})}

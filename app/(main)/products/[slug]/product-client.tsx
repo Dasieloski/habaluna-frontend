@@ -470,7 +470,7 @@ export function ProductClient({
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm text-sky-600 font-medium">Envío gratis desde 100 €</p>
+                <p className="text-sm text-sky-600 font-medium">Envío gratis desde $100</p>
                 <Link href="/shipping" className="text-xs text-sky-500 hover:underline">
                   Saber más
                 </Link>

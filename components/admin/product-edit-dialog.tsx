@@ -418,7 +418,7 @@ export function ProductEditDialog({ product, open, onOpenChange, onSuccess }: Pr
           {/* Precios y stock */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-price">Precio (€)</Label>
+              <Label htmlFor="edit-price">Precio ($)</Label>
               <Input
                 id="edit-price"
                 ref={priceRef}
@@ -480,7 +480,7 @@ export function ProductEditDialog({ product, open, onOpenChange, onSuccess }: Pr
           </div>
           {isOnSale && (
             <div className="space-y-2">
-              <Label htmlFor="edit-compare-price">Precio original (€)</Label>
+              <Label htmlFor="edit-compare-price">Precio original ($)</Label>
               <Input
                 id="edit-compare-price"
                 ref={comparePriceRef}

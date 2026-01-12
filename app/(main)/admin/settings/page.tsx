@@ -94,7 +94,7 @@ export default function SettingsPage() {
                   <Label htmlFor="currency">Moneda</Label>
                   <Input
                     id="currency"
-                    defaultValue="EUR (€)"
+                    defaultValue="USD ($)"
                     className="bg-secondary/50 border-transparent focus:border-primary"
                     disabled
                   />

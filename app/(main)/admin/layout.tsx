@@ -10,6 +10,7 @@ import { AdminHeader } from "@/components/admin/admin-header"
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, isAdmin } = useAuthStore()
+  const isBootstrapped = useAuthStore((s) => s.isBootstrapped)
   const router = useRouter()
   const pathname = usePathname()
   const [isLoading, setIsLoading] = useState(true)
@@ -24,6 +25,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     
     // Si no es la página de login y no está autenticado o no es admin, redirigir
     if (!isLoginPage && !isLoading) {
+      if (!isBootstrapped) return
       if (!isAuthenticated() || !isAdmin()) {
         router.push("/admin/login")
       }
@@ -33,7 +35,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (isLoginPage && isAuthenticated() && isAdmin()) {
       router.push("/admin")
     }
-  }, [user, isAuthenticated, isAdmin, isLoginPage, router, isLoading])
+  }, [user, isAuthenticated, isAdmin, isLoginPage, router, isLoading, isBootstrapped])
 
   if (isLoading) {
     return (
@@ -51,7 +53,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   // Si no está autenticado o no es admin, no mostrar nada (ya se redirigió)
-  if (!isAuthenticated() || !isAdmin()) {
+  if (!isBootstrapped || !isAuthenticated() || !isAdmin()) {
     return null
   }
 

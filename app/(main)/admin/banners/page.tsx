@@ -75,12 +75,14 @@ export default function AdminBannersPage() {
 
   const [uiLoading, setUiLoading] = useState(true)
   const [uiSaving, setUiSaving] = useState(false)
+  const [categoryOptions, setCategoryOptions] = useState<Array<{ id: string; name: string }>>([])
   const [uiForm, setUiForm] = useState({
     headerAnnouncement: "Envíos a toda la Habana - Entrega rápida",
     h1: "Envío gratis +50€",
     h2: "30 días devolución",
     h3: "Pago seguro",
     h4: "4.8/5 valoración",
+    headerNavCategories: ["", "", "", "", "", ""],
     b1Title: "VARIEDAD",
     b1Desc: "Encuentra desde alimentos hasta materiales de construcción, todo en un solo lugar.",
     b2Title: "DEVOLUCIONES GRATIS",
@@ -136,12 +138,32 @@ export default function AdminBannersPage() {
 
   useEffect(() => {
     let cancelled = false
+    const loadCategories = async () => {
+      try {
+        const cats = await api.getCategories()
+        if (cancelled) return
+        setCategoryOptions(
+          (Array.isArray(cats) ? cats : []).map((c: any) => ({ id: String(c.id), name: String(c.name) })),
+        )
+      } catch {
+        if (!cancelled) setCategoryOptions([])
+      }
+    }
+    loadCategories()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
     const loadUi = async () => {
       setUiLoading(true)
       try {
         const s = await api.getAdminUiSettings()
         const highlights = Array.isArray((s as any)?.headerHighlights) ? (s as any).headerHighlights : []
         const benefits = Array.isArray((s as any)?.benefits) ? (s as any).benefits : []
+        const navCats = Array.isArray((s as any)?.headerNavCategories) ? (s as any).headerNavCategories : []
         if (cancelled) return
         setUiForm((prev) => ({
           ...prev,
@@ -150,6 +172,7 @@ export default function AdminBannersPage() {
           h2: String(highlights[1] || prev.h2),
           h3: String(highlights[2] || prev.h3),
           h4: String(highlights[3] || prev.h4),
+          headerNavCategories: Array.from({ length: 6 }).map((_, i) => String(navCats[i] || prev.headerNavCategories[i] || "")),
           b1Title: String(benefits[0]?.title || prev.b1Title),
           b1Desc: String(benefits[0]?.description || prev.b1Desc),
           b2Title: String(benefits[1]?.title || prev.b2Title),
@@ -179,6 +202,7 @@ export default function AdminBannersPage() {
       await api.updateAdminUiSettings({
         headerAnnouncement: uiForm.headerAnnouncement,
         headerHighlights: [uiForm.h1, uiForm.h2, uiForm.h3, uiForm.h4],
+        headerNavCategories: uiForm.headerNavCategories,
         benefits: [
           { title: uiForm.b1Title, description: uiForm.b1Desc },
           { title: uiForm.b2Title, description: uiForm.b2Desc },
@@ -490,6 +514,44 @@ export default function AdminBannersPage() {
             <div className="grid gap-2">
               <Label>Highlight 4</Label>
               <Input value={uiForm.h4} onChange={(e) => setUiForm((p) => ({ ...p, h4: e.target.value }))} disabled={uiLoading || uiSaving} />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div>
+              <Label>Categorías del menú (6)</Label>
+              <p className="text-xs text-muted-foreground mt-1">
+                Estas 6 categorías se mostrarán en el menú principal (donde antes decía Novedades/Ofertas/Alimentos...).
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {Array.from({ length: 6 }).map((_, idx) => (
+                <div key={idx} className="space-y-2">
+                  <Label className="text-xs">Categoría {idx + 1}</Label>
+                  <Select
+                    value={uiForm.headerNavCategories[idx] || ""}
+                    onValueChange={(value) =>
+                      setUiForm((p) => {
+                        const next = [...p.headerNavCategories]
+                        next[idx] = value
+                        return { ...p, headerNavCategories: next }
+                      })
+                    }
+                    disabled={uiLoading || uiSaving}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona categoría" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categoryOptions.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
             </div>
           </div>
 

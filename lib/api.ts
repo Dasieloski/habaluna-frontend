@@ -135,6 +135,7 @@ export interface BackendUiSettings {
   id: string
   headerAnnouncement: string
   headerHighlights?: any
+  headerNavCategories?: any
   benefits?: any
   createdAt: string
   updatedAt: string
@@ -561,7 +562,14 @@ export const api = {
     return response.data as BackendUiSettings
   },
 
-  updateAdminUiSettings: async (data: Partial<{ headerAnnouncement: string; headerHighlights: string[]; benefits: Array<{ title: string; description: string }> }>) => {
+  updateAdminUiSettings: async (
+    data: Partial<{
+      headerAnnouncement: string
+      headerHighlights: string[]
+      headerNavCategories: string[]
+      benefits: Array<{ title: string; description: string }>
+    }>,
+  ) => {
     const response = await api.patch("/ui-settings/admin", data)
     return response.data as BackendUiSettings
   },

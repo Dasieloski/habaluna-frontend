@@ -16,21 +16,11 @@ import {
   CartIcon,
   MenuIcon,
   CloseIcon,
-  ChevronDownIcon,
   TruckIcon,
   ReturnIcon,
   ShieldIcon,
   StarIcon,
 } from "@/components/icons/streamline-icons"
-
-const navItems = [
-  { name: "Novedades", href: "/products?filter=new" },
-  { name: "Ofertas", href: "/products?filter=offers" },
-  { name: "Alimentos", href: "/products?filter=food", hasDropdown: true },
-  { name: "Materiales", href: "/products?filter=materials", hasDropdown: true },
-  { name: "Bebidas", href: "/products?filter=drinks" },
-  { name: "Otros", href: "/products?filter=other", highlight: true },
-]
 
 export function Header() {
   const router = useRouter()
@@ -59,6 +49,8 @@ export function Header() {
     announcement: "Envíos a toda la Habana - Entrega rápida",
     highlights: ["Envío gratis +50€", "30 días devolución", "Pago seguro", "4.8/5 valoración"],
   })
+
+  const [navItems, setNavItems] = useState<Array<{ name: string; href: string }>>([])
 
   const handleLogout = () => {
     logout()
@@ -90,15 +82,16 @@ export function Header() {
   }, [])
 
   useEffect(() => {
-    // Cargar textos configurables (público)
+    // Cargar textos configurables (público) + categorías del menú
     let cancelled = false
-    api
-      .getUiSettings?.()
-      .then((res: any) => {
-        if (cancelled || !res) return
-        const highlights = Array.isArray(res.headerHighlights) ? res.headerHighlights : []
+    ;(async () => {
+      try {
+        const [res, cats] = await Promise.all([api.getUiSettings?.(), api.getCategories?.()])
+        if (cancelled) return
+
+        const highlights = Array.isArray((res as any)?.headerHighlights) ? (res as any).headerHighlights : []
         setUi({
-          announcement: res.headerAnnouncement || ui.announcement,
+          announcement: (res as any)?.headerAnnouncement || ui.announcement,
           highlights: [
             String(highlights[0] || ui.highlights[0]),
             String(highlights[1] || ui.highlights[1]),
@@ -106,8 +99,28 @@ export function Header() {
             String(highlights[3] || ui.highlights[3]),
           ],
         })
-      })
-      .catch(() => {})
+
+        const categories = Array.isArray(cats) ? cats : []
+        const byId = new Map<string, any>(categories.map((c: any) => [String(c.id), c]))
+        const configured = Array.isArray((res as any)?.headerNavCategories) ? (res as any).headerNavCategories : []
+        const ids: string[] =
+          configured.length > 0
+            ? configured.map((x: any) => String(x)).filter((x: string) => !!x)
+            : categories.slice(0, 6).map((c: any) => String(c.id))
+
+        const items = ids
+          .filter((id) => byId.has(id))
+          .slice(0, 6)
+          .map((id) => ({
+            name: String(byId.get(id)?.name || "Categoría"),
+            href: `/products?categoryId=${encodeURIComponent(id)}`,
+          }))
+
+        setNavItems(items)
+      } catch {
+        // Fallback suave: no bloquear el header
+      }
+    })()
     return () => {
       cancelled = true
     }
@@ -423,12 +436,9 @@ export function Header() {
                 <li key={item.name}>
                   <Link
                     href={item.href}
-                    className={`flex items-center gap-1.5 px-5 py-3.5 text-sm font-medium rounded-xl transition-all duration-300 hover:bg-secondary ${
-                      item.highlight ? "text-sky-600 font-semibold" : ""
-                    }`}
+                    className="flex items-center gap-1.5 px-5 py-3.5 text-sm font-medium rounded-xl transition-all duration-300 hover:bg-secondary"
                   >
                     {item.name}
-                    {item.hasDropdown && <ChevronDownIcon className="w-4 h-4" />}
                   </Link>
                 </li>
               ))}
@@ -481,13 +491,10 @@ export function Header() {
                 <li key={item.name} className="animate-fade-in-up" style={{ animationDelay: `${index * 0.05}s` }}>
                   <Link
                     href={item.href}
-                    className={`flex items-center justify-between px-5 py-4 text-base font-medium hover:bg-secondary rounded-2xl transition-all duration-300 ${
-                      item.highlight ? "text-sky-600 bg-sky-50" : ""
-                    }`}
+                    className="flex items-center justify-between px-5 py-4 text-base font-medium hover:bg-secondary rounded-2xl transition-all duration-300"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     {item.name}
-                    {item.hasDropdown && <ChevronDownIcon className="w-5 h-5" />}
                   </Link>
                 </li>
               ))}

@@ -18,9 +18,7 @@ export function Footer() {
                 </span>
               </Link>
               <div className="flex items-center gap-2 mt-5">
-                <span className="text-xl" aria-label="Cuba" title="Cuba">
-                  🇨🇺
-                </span>
+                <Image src="/flags/cuba.png" alt="Cuba" width={20} height={14} className="h-4 w-auto rounded-sm" />
                 <select className="bg-transparent border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-sky-300">
                   <option>Cuba</option>
                 </select>
@@ -90,12 +88,15 @@ export function Footer() {
             <div>
               <h4 className="font-bold mb-5 text-foreground">Pago seguro</h4>
               <div className="flex flex-wrap gap-2">
-                <div className="bg-muted px-3 py-2 rounded-lg flex items-center">
-                  <Image src="/logo.png" alt="Habaluna" width={72} height={24} className="h-4 w-auto" />
-                </div>
-                {["VISA", "Mastercard", "PayPal", "Apple Pay"].map((method) => (
-                  <div key={method} className="bg-muted px-3 py-2 rounded-lg text-xs font-medium">
-                    {method}
+                {[
+                  { label: "VISA", icon: "/payments/visa.svg", w: 44, h: 16 },
+                  { label: "Mastercard", icon: "/payments/mastercard.svg", w: 56, h: 16 },
+                  { label: "PayPal", icon: "/payments/paypal.svg", w: 52, h: 16 },
+                  { label: "Apple Pay", icon: "/payments/applepay.svg", w: 56, h: 16 },
+                ].map((m) => (
+                  <div key={m.label} className="bg-muted px-3 py-2 rounded-lg flex items-center gap-2">
+                    <Image src={m.icon} alt={m.label} width={m.w} height={m.h} className="h-4 w-auto" />
+                    <span className="text-xs font-medium">{m.label}</span>
                   </div>
                 ))}
               </div>

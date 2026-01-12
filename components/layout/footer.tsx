@@ -12,7 +12,8 @@ export function Footer() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
             {/* Logo and language */}
             <div className="col-span-2 md:col-span-1">
-              <Link href="/" className="inline-block mb-5">
+              {/* En móvil movemos el logo al bloque "Pago seguro" para evitar huecos */}
+              <Link href="/" className="hidden md:inline-block mb-5">
                 <Image src="/logo.png" alt="Habaluna" width={180} height={64} className="h-12 w-auto" />
               </Link>
               <div className="flex items-center gap-2 mt-5">
@@ -85,7 +86,20 @@ export function Footer() {
 
             <div>
               <h4 className="font-bold mb-5 text-foreground">Pago seguro</h4>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                {/* Logo en móvil, al lado del bloque de pago */}
+                <Link href="/" className="md:hidden shrink-0">
+                  <Image
+                    src="/logo.png"
+                    alt="Habaluna"
+                    width={240}
+                    height={86}
+                    className="h-16 w-auto"
+                    priority
+                  />
+                </Link>
+
+                <div className="flex flex-wrap gap-2">
                 {[
                   { label: "VISA", icon: "/payments/visa.svg", w: 44, h: 16 },
                   { label: "Mastercard", icon: "/payments/mastercard.svg", w: 56, h: 16 },
@@ -97,6 +111,7 @@ export function Footer() {
                     <span className="text-xs font-medium">{m.label}</span>
                   </div>
                 ))}
+                </div>
               </div>
             </div>
           </div>

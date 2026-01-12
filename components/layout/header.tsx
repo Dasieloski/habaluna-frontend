@@ -190,11 +190,12 @@ export function Header() {
   }, [pathname, searchParams?.get("search")])
 
   return (
-    <header
-      className={`sticky top-0 z-50 bg-background shadow-sm transition-transform duration-500 ease-out ${
-        isHidden ? "-translate-y-full" : "translate-y-0"
-      }`}
-    >
+    <>
+      <header
+        className={`sticky top-0 z-50 bg-background shadow-sm transition-transform duration-500 ease-out ${
+          isHidden ? "-translate-y-full" : "translate-y-0"
+        }`}
+      >
       <div className="bg-linear-to-r from-sky-100 to-blue-100 text-foreground text-xs md:text-sm py-2.5 text-center">
         <p className="animate-fade-in">{ui.announcement}</p>
       </div>
@@ -206,7 +207,7 @@ export function Header() {
             {/* Mobile menu button */}
             <button
               className="md:hidden p-2 -ml-2 hover:bg-secondary rounded-xl transition-colors duration-300"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onClick={() => setMobileMenuOpen((v) => !v)}
             >
               {mobileMenuOpen ? <CloseIcon className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
             </button>
@@ -482,26 +483,30 @@ export function Header() {
         </div>
       </div>
 
-      {/* Mobile menu */}
-      {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 top-[140px] bg-background z-40 overflow-y-auto animate-fade-in">
-          <nav className="container mx-auto px-4 py-6">
-            <ul className="space-y-2">
-              {navItems.map((item, index) => (
-                <li key={item.name} className="animate-fade-in-up" style={{ animationDelay: `${index * 0.05}s` }}>
-                  <Link
-                    href={item.href}
-                    className="flex items-center justify-between px-5 py-4 text-base font-medium hover:bg-secondary rounded-2xl transition-all duration-300"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    {item.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        </div>
-      )}
     </header>
+
+    {/* Mobile menu (fuera del header para evitar bugs de `fixed` dentro de elementos con `transform`) */}
+    {mobileMenuOpen && (
+      <div className="md:hidden fixed inset-0 z-40 bg-background/95 backdrop-blur-sm animate-fade-in">
+        {/* Spacer para no tapar el header sticky (altura aproximada del header en mobile) */}
+        <div className="h-[140px]" />
+        <nav className="container mx-auto px-4 pb-6">
+          <ul className="space-y-2">
+            {navItems.map((item, index) => (
+              <li key={item.name} className="animate-fade-in-up" style={{ animationDelay: `${index * 0.05}s` }}>
+                <Link
+                  href={item.href}
+                  className="flex items-center justify-between px-5 py-4 text-base font-medium hover:bg-secondary rounded-2xl transition-all duration-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {item.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
+    )}
+    </>
   )
 }

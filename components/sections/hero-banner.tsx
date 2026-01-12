@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { ChevronRightIcon } from "@/components/icons/streamline-icons"
 import { OptimizedImage } from "@/components/ui/optimized-image"
 
@@ -48,6 +48,8 @@ const defaultBanners: Banner[] = [
 export function HeroBanner({ banners = defaultBanners }: HeroBannerProps) {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
+  const touchStartXRef = useRef<number | null>(null)
+  const touchStartYRef = useRef<number | null>(null)
   // Importante:
   // - `banners === undefined` => el componente no recibió datos, usar defaults (modo demo)
   // - `banners` es [] => no hay banners activos/configurados, NO usar defaults hardcodeados
@@ -66,6 +68,10 @@ export function HeroBanner({ banners = defaultBanners }: HeroBannerProps) {
 
   const nextSlide = useCallback(() => {
     goToSlide((currentSlide + 1) % displayBanners.length)
+  }, [currentSlide, displayBanners.length, goToSlide])
+
+  const prevSlide = useCallback(() => {
+    goToSlide((currentSlide - 1 + displayBanners.length) % displayBanners.length)
   }, [currentSlide, displayBanners.length, goToSlide])
 
   useEffect(() => {
@@ -87,7 +93,37 @@ export function HeroBanner({ banners = defaultBanners }: HeroBannerProps) {
         className="relative transition-colors duration-700 ease-out"
         style={{ backgroundColor: displayBanners[currentSlide]?.backgroundColor || "#e0f2fe" }}
       >
-        <div className="relative min-h-[450px] md:min-h-[550px]">
+        <div
+          className="relative min-h-[450px] md:min-h-[550px]"
+          style={{ touchAction: "pan-y" }}
+          onTouchStart={(e) => {
+            if (displayBanners.length <= 1) return
+            const t = e.touches[0]
+            touchStartXRef.current = t?.clientX ?? null
+            touchStartYRef.current = t?.clientY ?? null
+          }}
+          onTouchEnd={(e) => {
+            if (displayBanners.length <= 1) return
+            const startX = touchStartXRef.current
+            const startY = touchStartYRef.current
+            touchStartXRef.current = null
+            touchStartYRef.current = null
+            if (startX === null || startY === null) return
+
+            const t = e.changedTouches[0]
+            const endX = t?.clientX ?? startX
+            const endY = t?.clientY ?? startY
+            const dx = endX - startX
+            const dy = endY - startY
+
+            // Solo swipe horizontal claro, para no interferir con scroll vertical
+            if (Math.abs(dx) < 40) return
+            if (Math.abs(dx) < Math.abs(dy) * 1.2) return
+
+            if (dx < 0) nextSlide()
+            else prevSlide()
+          }}
+        >
           {displayBanners.map((banner, index) => (
             <div
               key={banner.id}
@@ -108,12 +144,11 @@ export function HeroBanner({ banners = defaultBanners }: HeroBannerProps) {
                     className="object-cover"
                     sizes="100vw"
                     objectFit="cover"
-                    loading="eager"
                     priority
                   />
                 )}
                 {/* Overlay sutil */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/50 via-black/20 to-transparent" />
 
                 <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-12">
                   <div className="max-w-xl">

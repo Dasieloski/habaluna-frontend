@@ -6,6 +6,9 @@ import Link from "next/link"
 import { HeartIcon } from "@/components/icons/streamline-icons"
 import { toNumber } from "@/lib/money"
 import { OptimizedImage } from "@/components/ui/optimized-image"
+import { ShoppingCart } from "lucide-react"
+import { useCartStore } from "@/lib/store/cart-store"
+import { useToast } from "@/hooks/use-toast"
 
 interface Product {
   id: string
@@ -28,6 +31,8 @@ export function TopSales({ products }: TopSalesProps) {
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
   const [isVisible, setIsVisible] = useState(false)
   const sectionRef = useRef<HTMLElement>(null)
+  const addToCart = useCartStore((s) => s.addToCart)
+  const { toast } = useToast()
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -59,6 +64,32 @@ export function TopSales({ products }: TopSalesProps) {
     })
   }
 
+  const handleAddToCart = async (product: Product, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      await addToCart({
+        product: {
+          id: product.id,
+          name: product.name,
+          slug: product.slug,
+          priceUSD: product.priceUSD ?? product.variants?.[0]?.priceUSD ?? null,
+          priceMNs: null,
+          images: product.images || [],
+        },
+        productVariant: null,
+        quantity: 1,
+      })
+      toast({ title: "Añadido al carrito" })
+    } catch (err: any) {
+      toast({
+        title: "No se pudo añadir",
+        description: err?.response?.data?.message || err?.message || "Intenta nuevamente.",
+        variant: "destructive",
+      })
+    }
+  }
+
   if (!products || products.length === 0) return null
 
   const featuredProduct = products[0]
@@ -68,7 +99,7 @@ export function TopSales({ products }: TopSalesProps) {
   const getComparePrice = (product: Product) => toNumber(product.variants?.[0]?.comparePriceUSD ?? product.comparePriceUSD)
 
   return (
-    <section ref={sectionRef} className="py-10 md:py-16 bg-gradient-to-br from-sky-50 via-blue-50 to-cyan-50">
+    <section ref={sectionRef} className="py-10 md:py-16 bg-linear-to-br from-sky-50 via-blue-50 to-cyan-50">
       <div className="container mx-auto px-4">
         {/* Header */}
         <div
@@ -98,7 +129,6 @@ export function TopSales({ products }: TopSalesProps) {
                   className="p-4 md:p-8 group-hover:scale-110 transition-transform duration-700 lg:object-contain"
                   sizes="(max-width: 1024px) 66vw, 40vw"
                   objectFit="cover"
-                  loading="eager"
                   priority
                 />
                 <button
@@ -110,6 +140,14 @@ export function TopSales({ products }: TopSalesProps) {
                   }`}
                 >
                   <HeartIcon className="w-5 h-5 md:w-6 md:h-6" filled={favorites.has(featuredProduct.id)} />
+                </button>
+                <button
+                  onClick={(e) => handleAddToCart(featuredProduct, e)}
+                  className="absolute bottom-3 right-3 md:bottom-4 md:right-4 p-2.5 md:p-3 rounded-xl bg-white/90 backdrop-blur-sm text-foreground hover:bg-white transition-all duration-300"
+                  aria-label="Añadir al carrito"
+                  type="button"
+                >
+                  <ShoppingCart className="w-5 h-5 md:w-6 md:h-6" />
                 </button>
                 <span className="absolute top-3 left-3 px-2 md:px-3 py-1 md:py-1.5 bg-gradient-to-r from-sky-400 to-blue-500 text-white text-[10px] md:text-xs font-bold uppercase rounded-full shadow-lg">
                   #1 Top
@@ -143,7 +181,6 @@ export function TopSales({ products }: TopSalesProps) {
                     className="p-3 md:p-4 group-hover:scale-110 transition-transform duration-500"
                     sizes="(max-width: 1024px) 33vw, 20vw"
                     objectFit="cover"
-                    loading="lazy"
                   />
                   <button
                     onClick={(e) => toggleFavorite(product.id, e)}
@@ -154,6 +191,14 @@ export function TopSales({ products }: TopSalesProps) {
                     }`}
                   >
                     <HeartIcon className="w-4 h-4 md:w-5 md:h-5" filled={favorites.has(product.id)} />
+                  </button>
+                  <button
+                    onClick={(e) => handleAddToCart(product, e)}
+                    className="absolute bottom-2 right-2 p-2 rounded-lg md:rounded-xl bg-white/90 backdrop-blur-sm text-foreground hover:bg-white transition-all duration-300 opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                    aria-label="Añadir al carrito"
+                    type="button"
+                  >
+                    <ShoppingCart className="w-4 h-4 md:w-5 md:h-5" />
                   </button>
                 </div>
                 <div className="p-3 md:p-4">

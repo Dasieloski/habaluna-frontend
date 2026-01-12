@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 
 export function Footer() {
   return (
@@ -8,7 +9,7 @@ export function Footer() {
       {/* Main footer */}
       <div className="py-12">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
             {/* Logo and language */}
             <div className="col-span-2 md:col-span-1">
               <Link href="/" className="inline-block mb-5">
@@ -17,9 +18,11 @@ export function Footer() {
                 </span>
               </Link>
               <div className="flex items-center gap-2 mt-5">
-                <span className="text-xl">🇪🇸</span>
+                <span className="text-xl" aria-label="Cuba" title="Cuba">
+                  🇨🇺
+                </span>
                 <select className="bg-transparent border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-sky-300">
-                  <option>España</option>
+                  <option>Cuba</option>
                 </select>
               </div>
               <div className="flex items-center gap-4 mt-5">
@@ -85,24 +88,11 @@ export function Footer() {
             </div>
 
             <div>
-              <h4 className="font-bold mb-5 text-foreground">Socios</h4>
-              <ul className="space-y-3 text-sm text-muted-foreground">
-                <li>
-                  <Link href="/press" className="hover:text-sky-500 transition-colors">
-                    Prensa
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/b2b" className="hover:text-sky-500 transition-colors">
-                    Consultas B2B
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
               <h4 className="font-bold mb-5 text-foreground">Pago seguro</h4>
               <div className="flex flex-wrap gap-2">
+                <div className="bg-muted px-3 py-2 rounded-lg flex items-center">
+                  <Image src="/logo.png" alt="Habaluna" width={72} height={24} className="h-4 w-auto" />
+                </div>
                 {["VISA", "Mastercard", "PayPal", "Apple Pay"].map((method) => (
                   <div key={method} className="bg-muted px-3 py-2 rounded-lg text-xs font-medium">
                     {method}

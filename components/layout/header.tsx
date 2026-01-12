@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useState, useRef, useEffect } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Input } from "@/components/ui/input"
@@ -199,12 +200,14 @@ export function Header() {
             </button>
 
             <Link href="/" className="flex items-center group">
-              <span
-                className="text-3xl md:text-5xl tracking-wide text-sky-600 transition-transform duration-300 group-hover:scale-105"
-                style={{ fontFamily: "'Londrina Shadow', cursive" }}
-              >
-                Habaluna
-              </span>
+              <Image
+                src="/logo.png"
+                alt="Habaluna"
+                width={160}
+                height={56}
+                priority
+                className="h-10 md:h-14 w-auto transition-transform duration-300 group-hover:scale-105"
+              />
             </Link>
 
             {/* Desktop Search */}

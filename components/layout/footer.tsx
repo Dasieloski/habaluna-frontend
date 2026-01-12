@@ -13,9 +13,7 @@ export function Footer() {
             {/* Logo and language */}
             <div className="col-span-2 md:col-span-1">
               <Link href="/" className="inline-block mb-5">
-                <span className="text-4xl text-sky-600" style={{ fontFamily: "'Londrina Shadow', cursive" }}>
-                  Habaluna
-                </span>
+                <Image src="/logo.png" alt="Habaluna" width={180} height={64} className="h-12 w-auto" />
               </Link>
               <div className="flex items-center gap-2 mt-5">
                 <Image src="/flags/cuba.png" alt="Cuba" width={20} height={14} className="h-4 w-auto rounded-sm" />

@@ -21,7 +21,13 @@ export const metadata: Metadata = {
   description:
     "Descubre productos únicos: alimentos, materiales y mucho más. Calidad y originalidad en cada compra.",
   icons: {
-    icon: "/logo.png",
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      // Fallback (some browsers still prefer PNG for tab icons)
+      { url: "/uploads/logo.png", type: "image/png" },
+    ],
+    shortcut: "/icon.svg",
+    apple: [{ url: "/uploads/logo.png", type: "image/png" }],
   },
   openGraph: {
     type: "website",

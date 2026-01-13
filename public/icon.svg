@@ -1,3 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Habaluna</title>
+  <!-- Crescent moon (filled, minimal padding so it reads larger at 16x16) -->
+  <path
+    fill="#38BDF8"
+    fill-rule="evenodd"
+    d="M16 1.5A14.5 14.5 0 1 0 16 30.5A14.5 14.5 0 0 0 16 1.5Zm6.2 4.8A11 11 0 1 1 22.2 25.7A10.6 10.6 0 0 0 16.6 16c0-4.2 2.4-7.9 5.6-9.7Z"
+    clip-rule="evenodd"
+  />
+  <!-- Sparkle star -->
+  <path
+    fill="#0F172A"
+    d="M25.5 6.2l1.05 3.2 3.2 1.05-3.2 1.05-1.05 3.2-1.05-3.2-3.2-1.05 3.2-1.05 1.05-3.2Z"
+  />
+</svg>
 <svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
   <style>
     @media (prefers-color-scheme: light) {
